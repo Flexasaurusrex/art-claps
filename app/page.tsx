@@ -160,25 +160,31 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Action Buttons */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
               gap: '1rem',
               marginBottom: '4rem'
             }}>
-              <button style={{
-                background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '1rem 2rem',
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                boxShadow: '0 8px 25px rgba(118, 75, 162, 0.3)'
-              }}>
+              <a 
+                href="/discover"
+                style={{
+                  background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '1rem 2rem',
+                  color: 'white',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 25px rgba(118, 75, 162, 0.3)',
+                  textDecoration: 'none',
+                  display: 'inline-block'
+                }}
+              >
                 Discover Artists
-              </button>
+              </a>
             </div>
           </div>
         </main>

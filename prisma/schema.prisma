@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(cuid())
+  farcasterFid    Int      @unique
+  username        String   @unique
+  displayName     String?
+  pfpUrl          String?
+  bio             String?
+  verifiedArtist  Boolean  @default(false)
+  totalPoints     Int      @default(0)
+  weeklyPoints    Int      @default(0)
+  monthlyPoints   Int      @default(0)
+  supportGiven    Int      @default(0)
+  supportReceived Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  activitiesGiven    Activity[] @relation("ActivityGiver")
+  activitiesReceived Activity[] @relation("ActivityReceiver")
+  connectionsFrom    ArtistConnection[] @relation("ConnectionFrom")
+  connectionsTo      ArtistConnection[] @relation("ConnectionTo")
+
+  @@map("users")
+}
+
+model Activity {
+  id               String      @id @default(cuid())
+  userId           String
+  activityType     ActivityType
+  pointsEarned     Int
+  farcasterCastHash String?
+  targetUserId     String?
+  metadata         Json?
+  processed        Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+
+  user       User  @relation("ActivityGiver", fields: [userId], references: [id])
+  targetUser User? @relation("ActivityReceiver", fields: [targetUserId], references: [id])
+
+  @@map("activities")
+}
+
+model ArtistConnection {
+  id                   String   @id @default(cuid())
+  fromUserId           String
+  toUserId             String
+  interactionCount     Int      @default(1)
+  lastInteraction      DateTime @default(now())
+  relationshipStrength Float    @default(1.0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  fromUser User @relation("ConnectionFrom", fields: [fromUserId], references: [id])
+  toUser   User @relation("ConnectionTo", fields: [toUserId], references: [id])
+
+  @@unique([fromUserId, toUserId])
+  @@map("artist_connections")
+}
+
+enum ActivityType {
+  SHARE_ARTIST_WORK
+  QUALITY_REPLY
+  ARTIST_DISCOVERY
+  WORK_SHARED
+  QUALITY_REPLY_RECEIVED
+  COLLABORATION_TAG
+  CROSS_PROMOTION
+}

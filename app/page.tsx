@@ -1,6 +1,10 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 export default function Home() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -22,20 +26,101 @@ export default function Home() {
         }}>
           Art Claps
         </div>
-        <button style={{
-          background: 'rgba(255, 255, 255, 0.2)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          borderRadius: '8px',
-          padding: '0.75rem 1.5rem',
-          color: 'white',
-          fontWeight: '500',
-          cursor: 'pointer',
-          backdropFilter: 'blur(10px)',
-          transition: 'all 0.3s ease'
-        }}>
+        <button 
+          onClick={() => setShowAuthModal(true)}
+          style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '8px',
+            padding: '0.75rem 1.5rem',
+            color: 'white',
+            fontWeight: '500',
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease'
+          }}>
           Connect Farcaster
         </button>
       </header>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            padding: '3rem',
+            textAlign: 'center',
+            maxWidth: '500px',
+            margin: '2rem'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚀</div>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: '700',
+              marginBottom: '1rem',
+              color: '#333'
+            }}>
+              Farcaster Auth Coming Soon!
+            </h2>
+            <p style={{
+              color: '#666',
+              fontSize: '1.1rem',
+              marginBottom: '2rem',
+              lineHeight: '1.6'
+            }}>
+              We're implementing real Farcaster authentication. For now, explore the platform and get ready to support amazing artists!
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowAuthModal(false)}
+                style={{
+                  background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '1rem 2rem',
+                  color: 'white',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Got It!
+              </button>
+              <button
+                onClick={() => {
+                  setShowAuthModal(false);
+                  alert('Join our Discord: discord.gg/artclaps (coming soon!)');
+                }}
+                style={{
+                  background: 'transparent',
+                  border: '2px solid #667eea',
+                  borderRadius: '12px',
+                  padding: '1rem 2rem',
+                  color: '#667eea',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Get Updates
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <main style={{ padding: '0 2rem' }}>
@@ -110,7 +195,8 @@ export default function Home() {
               <div style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                 <div style={{ marginBottom: '0.5rem' }}>✅ Successfully Deployed</div>
                 <div style={{ marginBottom: '0.5rem' }}>✅ Database Connected</div>
-                <div>⬜ Authentication (Coming Next)</div>
+                <div style={{ marginBottom: '0.5rem' }}>✅ Beautiful UI Live</div>
+                <div>⬜ Farcaster Auth (Next)</div>
               </div>
             </div>
 
@@ -157,9 +243,7 @@ export default function Home() {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '12px',
               padding: '1.5rem',
-              textAlign: 'center',
-              transition: 'transform 0.3s ease',
-              cursor: 'pointer'
+              textAlign: 'center'
             }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>👏</div>
               <h4 style={{
@@ -185,9 +269,7 @@ export default function Home() {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '12px',
               padding: '1.5rem',
-              textAlign: 'center',
-              transition: 'transform 0.3s ease',
-              cursor: 'pointer'
+              textAlign: 'center'
             }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎨</div>
               <h4 style={{
@@ -213,9 +295,7 @@ export default function Home() {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '12px',
               padding: '1.5rem',
-              textAlign: 'center',
-              transition: 'transform 0.3s ease',
-              cursor: 'pointer'
+              textAlign: 'center'
             }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏆</div>
               <h4 style={{
@@ -241,9 +321,7 @@ export default function Home() {
               border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '12px',
               padding: '1.5rem',
-              textAlign: 'center',
-              transition: 'transform 0.3s ease',
-              cursor: 'pointer'
+              textAlign: 'center'
             }}>
               <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💎</div>
               <h4 style={{
@@ -280,7 +358,7 @@ export default function Home() {
               fontWeight: '700',
               marginBottom: '1rem'
             }}>
-              Join the Community
+              Coming Very Soon
             </h2>
             <p style={{
               color: 'rgba(255, 255, 255, 0.8)',
@@ -289,20 +367,22 @@ export default function Home() {
               maxWidth: '500px',
               margin: '0 auto 2rem auto'
             }}>
-              Be among the first to support artists and build the future of SocialFi on Farcaster.
+              Farcaster authentication, artist discovery, and real point tracking are being built right now.
             </p>
-            <button style={{
-              background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '1rem 2.5rem',
-              color: 'white',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 8px 25px rgba(118, 75, 162, 0.3)'
-            }}>
+            <button 
+              onClick={() => setShowAuthModal(true)}
+              style={{
+                background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '1rem 2.5rem',
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 8px 25px rgba(118, 75, 162, 0.3)'
+              }}>
               Get Early Access
             </button>
           </div>

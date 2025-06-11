@@ -90,9 +90,20 @@ export default function DiscoverPage() {
   const [artists, setArtists] = useState<Artist[]>(mockArtists);
   const [userClaps, setUserClaps] = useState<{[key: number]: boolean}>({});
   const [loading, setLoading] = useState<{[key: number]: boolean}>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Handle loading state
+  useEffect(() => {
+    // Give the auth some time to initialize
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleClap = async (artistFid: number) => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !profile) return;
     
     setLoading(prev => ({ ...prev, [artistFid]: true }));
     
@@ -113,7 +124,8 @@ export default function DiscoverPage() {
     console.log(`User ${profile.fid} clapped for artist ${artistFid}`);
   };
 
-  if (!isAuthenticated) {
+  // Loading state
+  if (isLoading) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -124,7 +136,42 @@ export default function DiscoverPage() {
         color: 'white',
         fontSize: '1.5rem'
       }}>
-        Please sign in to discover artists
+        Loading... 🎨
+      </div>
+    );
+  }
+
+  // Not authenticated state
+  if (!isAuthenticated || !profile) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1.5rem',
+        textAlign: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{ marginBottom: '2rem' }}>🔐</div>
+        <div style={{ marginBottom: '2rem' }}>Please sign in to discover artists</div>
+        <a 
+          href="/"
+          style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '12px',
+            padding: '1rem 2rem',
+            color: 'white',
+            textDecoration: 'none',
+            fontSize: '1rem'
+          }}
+        >
+          ← Back to Sign In
+        </a>
       </div>
     );
   }

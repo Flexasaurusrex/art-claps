@@ -1,13 +1,12 @@
 'use client';
 
-// NO CSS IMPORT - we'll style it ourselves
+import '@farcaster/auth-kit/styles.css';
 import { AuthKitProvider } from '@farcaster/auth-kit';
 
 const config = {
   rpcUrl: 'https://mainnet.optimism.io',
   domain: 'art-claps.vercel.app',
   siweUri: 'https://art-claps.vercel.app/login',
-  relay: 'https://relay.farcaster.xyz',
 };
 
 export function Providers({ children }: { children: React.ReactNode }) {

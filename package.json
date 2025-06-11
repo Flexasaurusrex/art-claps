@@ -11,6 +11,8 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
+    "@farcaster/auth-kit": "^0.3.2",
+    "@farcaster/core": "^0.13.0",
     "@prisma/client": "^5.6.0",
     "@types/node": "^20.8.7",
     "@types/react": "^18.2.31",
@@ -21,7 +23,8 @@
     "prisma": "^5.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "viem": "^1.19.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",

@@ -1,10 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 body {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f8f9fb;
-  color: #1a1a1a;
-  line-height: 1.5;
+  margin: 0;
+  font-family: Arial, sans-serif;
 }

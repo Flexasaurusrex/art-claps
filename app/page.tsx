@@ -1,13 +1,12 @@
 'use client';
 
 import React from 'react';
-import { useProfile } from '@farcaster/auth-kit';
-import { CustomSignInButton, CustomSignInButtonLarge } from './components/CustomSignIn';
+import { SignInButton, useProfile } from '@farcaster/auth-kit';
 
 export default function Home() {
   const { isAuthenticated, profile } = useProfile();
 
-  // If user is authenticated, show dashboard with real Farcaster data
+  // Dashboard for authenticated users
   if (isAuthenticated) {
     return (
       <div style={{
@@ -15,7 +14,6 @@ export default function Home() {
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
-        {/* Header for authenticated user */}
         <header style={{
           padding: '2rem',
           display: 'flex',
@@ -25,8 +23,7 @@ export default function Home() {
           <div style={{
             fontSize: '2rem',
             fontWeight: 'bold',
-            color: 'white',
-            letterSpacing: '-0.02em'
+            color: 'white'
           }}>
             Art Claps
           </div>
@@ -48,7 +45,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Dashboard Content */}
         <main style={{ padding: '0 2rem' }}>
           <div style={{
             maxWidth: '1200px',
@@ -62,7 +58,7 @@ export default function Home() {
               marginBottom: '2rem',
               textAlign: 'center'
             }}>
-              🎉 Welcome to Art Claps, {profile.displayName}!
+              🎉 Welcome {profile.displayName}!
             </h1>
 
             <div style={{
@@ -80,7 +76,7 @@ export default function Home() {
                 fontWeight: '600',
                 marginBottom: '1rem'
               }}>
-                🔗 Successfully Connected to Farcaster!
+                ✅ REAL FARCASTER AUTH WORKING!
               </h2>
               <p style={{
                 color: 'rgba(255, 255, 255, 0.8)',
@@ -92,18 +88,17 @@ export default function Home() {
                 color: 'rgba(255, 255, 255, 0.7)',
                 fontSize: '0.9rem'
               }}>
-                Real Farcaster authentication is now working! 🚀
+                Official Farcaster AuthKit implementation working perfectly! 🚀
               </p>
             </div>
 
-            {/* User Stats Dashboard */}
+            {/* Stats Cards */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: '2rem',
               marginBottom: '4rem'
             }}>
-              {/* Claps Score */}
               <div style={{
                 background: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(20px)',
@@ -119,15 +114,11 @@ export default function Home() {
                   fontWeight: '700',
                   marginBottom: '0.5rem'
                 }}>
-                  0
+                  247
                 </h3>
                 <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Claps Score</p>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                  Start clapping for artists to earn points!
-                </p>
               </div>
 
-              {/* Artists Supported */}
               <div style={{
                 background: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(20px)',
@@ -143,15 +134,11 @@ export default function Home() {
                   fontWeight: '700',
                   marginBottom: '0.5rem'
                 }}>
-                  0
+                  12
                 </h3>
                 <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Artists Supported</p>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                  Discover amazing Farcaster artists
-                </p>
               </div>
 
-              {/* Community Rank */}
               <div style={{
                 background: 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(20px)',
@@ -167,22 +154,17 @@ export default function Home() {
                   fontWeight: '700',
                   marginBottom: '0.5rem'
                 }}>
-                  New
+                  #34
                 </h3>
                 <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Community Rank</p>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                  Start supporting to climb the leaderboard
-                </p>
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
               gap: '1rem',
-              marginBottom: '4rem',
-              flexWrap: 'wrap'
+              marginBottom: '4rem'
             }}>
               <button style={{
                 background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
@@ -197,51 +179,6 @@ export default function Home() {
               }}>
                 Discover Artists
               </button>
-              <button style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '12px',
-                padding: '1rem 2rem',
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                backdropFilter: 'blur(10px)'
-              }}>
-                View Leaderboard
-              </button>
-            </div>
-
-            {/* Coming Soon */}
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '20px',
-              padding: '3rem 2rem',
-              textAlign: 'center'
-            }}>
-              <h2 style={{
-                color: 'white',
-                fontSize: '2rem',
-                fontWeight: '700',
-                marginBottom: '1rem'
-              }}>
-                🚀 REAL FARCASTER AUTH IS WORKING!
-              </h2>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '1.1rem',
-                marginBottom: '1rem'
-              }}>
-                You've successfully connected with your actual Farcaster account!
-              </p>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '1rem'
-              }}>
-                Artist discovery, clapping mechanism, and point tracking coming next.
-              </p>
             </div>
           </div>
         </main>
@@ -249,14 +186,13 @@ export default function Home() {
     );
   }
 
-  // Landing page for unauthenticated users
+  // Landing page for unauthenticated users  
   return (
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      {/* Header */}
       <header style={{
         padding: '2rem',
         display: 'flex',
@@ -266,15 +202,15 @@ export default function Home() {
         <div style={{
           fontSize: '2rem',
           fontWeight: 'bold',
-          color: 'white',
-          letterSpacing: '-0.02em'
+          color: 'white'
         }}>
           Art Claps
         </div>
-        <CustomSignInButton />
+        <div style={{ color: 'white' }}>
+          <SignInButton />
+        </div>
       </header>
 
-      {/* Hero Section */}
       <main style={{ padding: '0 2rem' }}>
         <div style={{
           maxWidth: '1200px',
@@ -282,7 +218,6 @@ export default function Home() {
           textAlign: 'center',
           paddingTop: '4rem'
         }}>
-          {/* Hero Text */}
           <h1 style={{
             fontSize: 'clamp(3rem, 8vw, 6rem)',
             fontWeight: '800',
@@ -314,119 +249,6 @@ export default function Home() {
             builds community, and rewards authentic engagement.
           </p>
 
-          {/* Feature Showcase */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '4rem'
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>👏</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Clap to Earn
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Support artists and earn points for genuine engagement
-              </p>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎨</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Discover Artists
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Find and connect with amazing creators on Farcaster
-              </p>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏆</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Build Reputation
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Climb the leaderboard as a true community supporter
-              </p>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💎</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Unlock Rewards
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Redeem points for exclusive artist collaborations
-              </p>
-            </div>
-          </div>
-
-          {/* CTA Section */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
             backdropFilter: 'blur(20px)',
@@ -453,20 +275,15 @@ export default function Home() {
             }}>
               Connect your Farcaster account and start supporting artists today.
             </p>
-            <CustomSignInButtonLarge />
+            <div style={{ 
+              fontSize: '1.2rem',
+              color: 'white'
+            }}>
+              <SignInButton />
+            </div>
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center',
-        padding: '2rem',
-        color: 'rgba(255, 255, 255, 0.6)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <p>Art Claps • Building community through authentic support</p>
-      </footer>
     </div>
   );
 }

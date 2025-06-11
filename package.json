@@ -1,19 +1,24 @@
-'use client';
-
-import '@farcaster/auth-kit/styles.css';
-import { AuthKitProvider } from '@farcaster/auth-kit';
-
-const config = {
-  rpcUrl: 'https://mainnet.optimism.io',
-  domain: 'art-claps.vercel.app',
-  siweUri: 'https://art-claps.vercel.app/login',
-  relay: 'https://relay.farcaster.xyz',
-};
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthKitProvider config={config}>
-      {children}
-    </AuthKitProvider>
-  );
+{
+  "name": "art-claps",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18",
+    "next": "14.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.0"
+  }
 }

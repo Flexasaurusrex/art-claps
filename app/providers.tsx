@@ -1,6 +1,6 @@
 'use client';
 
-import '@farcaster/auth-kit/styles.css';
+// NO CSS IMPORT - we'll style it ourselves
 import { AuthKitProvider } from '@farcaster/auth-kit';
 
 const config = {

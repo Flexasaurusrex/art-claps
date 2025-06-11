@@ -1,6 +1,6 @@
 // app/api/clap/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, ActivityType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId: user.id,
         targetUserId: targetUser.id,
-        activityType: ActivityType.CLAP_REACTION,
+        activityType: 'CLAP_REACTION' as any, // TEMPORARY FIX - using string instead of enum
         createdAt: {
           gte: today,
           lt: tomorrow
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         targetUserId: targetUser.id,
-        activityType: ActivityType.CLAP_REACTION,
+        activityType: 'CLAP_REACTION' as any, // TEMPORARY FIX - using string instead of enum
         pointsEarned: 5, // 5 points for a clap
         processed: true,
         metadata: {

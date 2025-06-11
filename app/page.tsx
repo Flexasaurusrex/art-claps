@@ -249,6 +249,119 @@ export default function Home() {
             builds community, and rewards authentic engagement.
           </p>
 
+          {/* Feature Cards */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '1.5rem',
+            marginBottom: '4rem'
+          }}>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>👏</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Clap to Earn
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Support artists and earn points for genuine engagement
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎨</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Discover Artists
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Find and connect with amazing creators on Farcaster
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏆</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Build Reputation
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Climb the leaderboard as a true community supporter
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💎</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Unlock Rewards
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Redeem points for exclusive artist collaborations
+              </p>
+            </div>
+          </div>
+
+          {/* CTA Section */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
             backdropFilter: 'blur(20px)',
@@ -284,6 +397,16 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer style={{
+        textAlign: 'center',
+        padding: '2rem',
+        color: 'rgba(255, 255, 255, 0.6)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <p>Art Claps • Building community through authentic support</p>
+      </footer>
     </div>
   );
 }

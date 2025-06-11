@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function Home() {
   return (
     <div style={{
@@ -30,7 +32,7 @@ export default function Home() {
           cursor: 'pointer',
           backdropFilter: 'blur(10px)',
           transition: 'all 0.3s ease'
-        }}
+        }}>
           Connect Farcaster
         </button>
       </header>
@@ -149,40 +151,117 @@ export default function Home() {
             gap: '1.5rem',
             marginBottom: '4rem'
           }}>
-            {[
-              { icon: '👏', title: 'Clap to Earn', desc: 'Support artists and earn points for genuine engagement' },
-              { icon: '🎨', title: 'Discover Artists', desc: 'Find and connect with amazing creators on Farcaster' },
-              { icon: '🏆', title: 'Build Reputation', desc: 'Climb the leaderboard as a true community supporter' },
-              { icon: '💎', title: 'Unlock Rewards', desc: 'Redeem points for exclusive artist collaborations' }
-            ].map((feature, index) => (
-              <div key={index} style={{
-                background: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(15px)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                textAlign: 'center',
-                transition: 'transform 0.3s ease',
-                cursor: 'pointer'
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>👏</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
               }}>
-                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{feature.icon}</div>
-                <h4 style={{
-                  color: 'white',
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  marginBottom: '0.5rem'
-                }}>
-                  {feature.title}
-                </h4>
-                <p style={{
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  fontSize: '0.9rem',
-                  lineHeight: '1.4'
-                }}>
-                  {feature.desc}
-                </p>
-              </div>
-            ))}
+                Clap to Earn
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Support artists and earn points for genuine engagement
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎨</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Discover Artists
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Find and connect with amazing creators on Farcaster
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏆</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Build Reputation
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Climb the leaderboard as a true community supporter
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(15px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              transition: 'transform 0.3s ease',
+              cursor: 'pointer'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💎</div>
+              <h4 style={{
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem'
+              }}>
+                Unlock Rewards
+              </h4>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.9rem',
+                lineHeight: '1.4'
+              }}>
+                Redeem points for exclusive artist collaborations
+              </p>
+            </div>
           </div>
 
           {/* CTA Section */}
@@ -240,5 +319,5 @@ export default function Home() {
         <p>Art Claps • Building community through authentic support</p>
       </footer>
     </div>
-  )
+  );
 }

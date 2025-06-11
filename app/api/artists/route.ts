@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         const clappedToday = await prisma.activity.findMany({
           where: {
             userId: currentUser.id,
-            activityType: 'CLAP_REACTION',
+            // activityType: 'CLAP_REACTION', // TEMPORARILY REMOVED - will add back after DB update
             createdAt: {
               gte: today,
               lt: tomorrow

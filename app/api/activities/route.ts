@@ -1,6 +1,6 @@
 // app/api/activities/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, ActivityType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -40,8 +40,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate activity type
-    if (!Object.keys(ActivityType).includes(activityType)) {
+    // Validate activity type (using string validation instead of enum)
+    const validActivityTypes = [
+      'SHARE_ARTIST_WORK',
+      'QUALITY_REPLY',
+      'ARTIST_DISCOVERY',
+      'WORK_SHARED',
+      'QUALITY_REPLY_RECEIVED',
+      'COLLABORATION_TAG',
+      'CROSS_PROMOTION',
+      'CLAP_REACTION',
+      'DETAILED_CRITIQUE',
+      'ARTIST_SPOTLIGHT',
+      'RECAST_WITH_COMMENT',
+      'ART_THREAD_CREATION',
+      'ARTIST_TAG_MENTION',
+      'FOLLOW_NEW_ARTIST',
+      'ART_EVENT_PROMOTION',
+      'CROSS_PLATFORM_SHARE',
+      'TUTORIAL_CREATION'
+    ];
+
+    if (!validActivityTypes.includes(activityType)) {
       return NextResponse.json(
         { error: 'Invalid activity type' },
         { status: 400 }
@@ -53,7 +73,7 @@ export async function POST(request: NextRequest) {
       const existingActivity = await prisma.activity.findFirst({
         where: {
           userId,
-          activityType: activityType as ActivityType,
+          activityType: activityType as any, // TEMPORARY FIX - using string instead of enum
           farcasterCastHash,
           targetUserId
         }
@@ -74,7 +94,7 @@ export async function POST(request: NextRequest) {
     const activity = await prisma.activity.create({
       data: {
         userId,
-        activityType: activityType as ActivityType,
+        activityType: activityType as any, // TEMPORARY FIX - using string instead of enum
         pointsEarned,
         targetUserId,
         farcasterCastHash,

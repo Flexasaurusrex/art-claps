@@ -31,14 +31,6 @@ export default function Home() {
           backdropFilter: 'blur(10px)',
           transition: 'all 0.3s ease'
         }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }}>
           Connect Farcaster
         </button>
       </header>
@@ -172,14 +164,6 @@ export default function Home() {
                 textAlign: 'center',
                 transition: 'transform 0.3s ease',
                 cursor: 'pointer'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-5px)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
               }}>
                 <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{feature.icon}</div>
                 <h4 style={{
@@ -239,14 +223,6 @@ export default function Home() {
               cursor: 'pointer',
               transition: 'all 0.3s ease',
               boxShadow: '0 8px 25px rgba(118, 75, 162, 0.3)'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-3px)';
-              e.currentTarget.style.boxShadow = '0 12px 35px rgba(118, 75, 162, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(118, 75, 162, 0.3)';
             }}>
               Get Early Access
             </button>

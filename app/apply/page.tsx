@@ -1,463 +1,266 @@
-'use client';
+// app/api/artists/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-import React, { useState, useEffect } from 'react';
-import { useProfile } from '@farcaster/auth-kit';
-import { useRouter } from 'next/navigation';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-export default function ApplyPage() {
-  const { isAuthenticated, profile } = useProfile();
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    portfolioUrl: '',
-    referralCode: '',
-    applicationMessage: '',
-    agreedToTerms: false
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'referral_success'>('idle');
-  const [message, setMessage] = useState('');
+// Helper function to safely extract data from Supabase foreign key relationships
+function extractRelationshipData<T>(data: T | T[] | null): T | null {
+  if (!data) return null;
+  return Array.isArray(data) ? data[0] : data;
+}
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/');
-    }
-  }, [isAuthenticated, router]);
+// GET - Return all verified artists for discovery page
+export async function GET() {
+  try {
+    const { data: artists, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        username,
+        displayName,
+        pfpUrl,
+        bio,
+        totalPoints,
+        weeklyPoints,
+        monthlyPoints,
+        supportReceived,
+        createdAt
+      `)
+      .eq('artistStatus', 'verified_artist')
+      .order('weeklyPoints', { ascending: false });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.agreedToTerms) {
-      setStatus('error');
-      setMessage('Please agree to the terms and conditions');
-      return;
-    }
+    if (error) throw error;
 
-    if (!formData.referralCode && !formData.applicationMessage) {
-      setStatus('error');
-      setMessage('Please provide either a referral code or tell us about your art');
-      return;
-    }
+    return NextResponse.json({
+      success: true,
+      artists: artists || []
+    });
 
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/artists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          farcasterFid: profile?.fid,
-          username: profile?.username,
-          displayName: profile?.displayName,
-          pfpUrl: profile?.pfpUrl,
-          bio: profile?.bio,
-          portfolioUrl: formData.portfolioUrl,
-          referralCode: formData.referralCode,
-          applicationMessage: formData.applicationMessage
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        const isInstantVerification = data.user.artistStatus === 'verified_artist';
-        setStatus(isInstantVerification ? 'referral_success' : 'success');
-        setMessage(data.message);
-        
-        // Redirect after success
-        setTimeout(() => {
-          router.push(isInstantVerification ? '/discover' : '/');
-        }, 3000);
-      } else {
-        setStatus('error');
-        setMessage(data.error || 'Application failed');
-      }
-    } catch (error) {
-      setStatus('error');
-      setMessage('Failed to submit application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
-  };
-
-  if (!isAuthenticated || !profile) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem'
-      }}>
-        Loading...
-      </div>
+  } catch (error) {
+    console.error('Error fetching artists:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch artists' },
+      { status: 500 }
     );
   }
+}
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      padding: '2rem'
-    }}>
-      {/* Header */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '3rem'
-      }}>
-        <div style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          color: 'white'
-        }}>
-          <a href="/" style={{ color: 'white', textDecoration: 'none' }}>
-            Art Claps
-          </a>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <img 
-            src={profile.pfpUrl} 
-            alt={profile.displayName}
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              border: '2px solid rgba(255, 255, 255, 0.3)'
-            }}
-          />
-          <div style={{ color: 'white' }}>
-            <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
-          </div>
-        </div>
-      </header>
+// POST - Handle artist application
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const {
+      farcasterFid,
+      username,
+      displayName,
+      pfpUrl,
+      bio,
+      portfolioUrl,
+      referralCode,
+      applicationMessage
+    } = body;
 
-      {/* Main Content */}
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '24px',
-          padding: '3rem',
-          textAlign: 'center'
-        }}>
-          
-          {status === 'idle' ? (
-            <>
-              <h1 style={{
-                fontSize: '2.5rem',
-                fontWeight: '800',
-                color: 'white',
-                marginBottom: '1rem'
-              }}>
-                🎨 Become a Verified Artist
-              </h1>
-              
-              <p style={{
-                fontSize: '1.2rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginBottom: '3rem',
-                lineHeight: '1.6'
-              }}>
-                Join Art Claps as a verified artist and start receiving support from the Farcaster community. 
-                Get claps, build your audience, and connect with fellow creators.
-              </p>
+    if (!farcasterFid || !username) {
+      return NextResponse.json(
+        { error: 'Farcaster FID and username are required' },
+        { status: 400 }
+      );
+    }
 
-              <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
-                
-                {/* Referral Code Section */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'white',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem'
-                  }}>
-                    🎟️ Referral Code (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="referralCode"
-                    value={formData.referralCode}
-                    onChange={handleInputChange}
-                    placeholder="Enter referral code for instant verification"
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                  />
-                  <p style={{
-                    fontSize: '0.9rem',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    marginTop: '0.5rem'
-                  }}>
-                    Have a code from a verified artist? Enter it above for instant verification!
-                  </p>
-                </div>
+    // Check if user already exists
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id, artistStatus')
+      .eq('farcasterFid', parseInt(farcasterFid))
+      .single();
 
-                {/* Divider */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  margin: '2rem 0',
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }}>
-                  <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
-                  <span style={{ margin: '0 1rem' }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
-                </div>
+    if (userCheckError && userCheckError.code !== 'PGRST116') {
+      throw userCheckError;
+    }
 
-                {/* Portfolio URL */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'white',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem'
-                  }}>
-                    🖼️ Portfolio URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    name="portfolioUrl"
-                    value={formData.portfolioUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://your-portfolio.com"
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                  />
-                </div>
+    if (existingUser) {
+      if (existingUser.artistStatus === 'verified_artist') {
+        return NextResponse.json(
+          { error: 'You are already a verified artist!' },
+          { status: 400 }
+        );
+      }
+      
+      if (existingUser.artistStatus === 'pending_artist') {
+        return NextResponse.json(
+          { error: 'Your application is already under review' },
+          { status: 400 }
+        );
+      }
+    }
 
-                {/* Application Message */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'white',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem'
-                  }}>
-                    ✨ Tell us about your art
-                  </label>
-                  <textarea
-                    name="applicationMessage"
-                    value={formData.applicationMessage}
-                    onChange={handleInputChange}
-                    placeholder="What kind of art do you create? Share your story, style, and what makes your work unique..."
-                    rows={5}
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      backdropFilter: 'blur(10px)',
-                      resize: 'vertical',
-                      fontFamily: 'inherit'
-                    }}
-                  />
-                </div>
+    let referrerId = null;
+    let isInstantVerification = false;
 
-                {/* Terms Checkbox */}
-                <div style={{ 
-                  marginBottom: '2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    name="agreedToTerms"
-                    checked={formData.agreedToTerms}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '18px',
-                      height: '18px'
-                    }}
-                  />
-                  <label htmlFor="terms" style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: '0.9rem'
-                  }}>
-                    I agree to be a positive member of the Art Claps community and support fellow artists
-                  </label>
-                </div>
+    // Check referral code if provided
+    if (referralCode) {
+      const { data: referralData, error: referralError } = await supabase
+        .from('referral_codes')
+        .select(`
+          id,
+          createdBy,
+          used,
+          expiresAt,
+          creator:users!referral_codes_createdBy_fkey(
+            id,
+            username,
+            artistStatus
+          )
+        `)
+        .eq('code', referralCode.toUpperCase())
+        .single();
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  style={{
-                    width: '100%',
-                    background: isSubmitting 
-                      ? 'rgba(255, 255, 255, 0.3)' 
-                      : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '1.25rem',
-                    color: 'white',
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {isSubmitting ? '🎨 Submitting Application...' : '🚀 Apply to Become Artist'}
-                </button>
-              </form>
-            </>
-          ) : (
-            /* Success/Error States */
-            <div>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
-                {status === 'referral_success' ? '🎉' : status === 'success' ? '✨' : '❌'}
-              </div>
-              
-              <h2 style={{
-                fontSize: '2rem',
-                fontWeight: '700',
-                color: 'white',
-                marginBottom: '1rem'
-              }}>
-                {status === 'referral_success' ? 'Welcome, Verified Artist!' :
-                 status === 'success' ? 'Application Submitted!' :
-                 'Application Error'}
-              </h2>
-              
-              <p style={{
-                fontSize: '1.2rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginBottom: '2rem',
-                lineHeight: '1.6'
-              }}>
-                {message}
-              </p>
+      if (referralError || !referralData) {
+        return NextResponse.json(
+          { error: 'Invalid referral code' },
+          { status: 400 }
+        );
+      }
 
-              {status !== 'error' && (
-                <p style={{
-                  fontSize: '1rem',
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }}>
-                  Redirecting you in a moment...
-                </p>
-              )}
+      if (referralData.used) {
+        return NextResponse.json(
+          { error: 'This referral code has already been used' },
+          { status: 400 }
+        );
+      }
 
-              {status === 'error' && (
-                <button
-                  onClick={() => setStatus('idle')}
-                  style={{
-                    background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '1rem 2rem',
-                    color: 'white',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Try Again
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+      if (new Date(referralData.expiresAt) < new Date()) {
+        return NextResponse.json(
+          { error: 'This referral code has expired' },
+          { status: 400 }
+        );
+      }
 
-        {/* Info Cards */}
-        {status === 'idle' && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
-            marginTop: '3rem'
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚡</div>
-              <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                Instant with Referral
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-                Get verified instantly with a code from existing artists
-              </p>
-            </div>
+      // Safely extract creator data
+      const creatorData = extractRelationshipData(referralData.creator);
+      
+      if (!creatorData || creatorData.artistStatus !== 'verified_artist') {
+        return NextResponse.json(
+          { error: 'Invalid referral code - creator not verified' },
+          { status: 400 }
+        );
+      }
 
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
-              <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                Curated Community
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-                We manually review applications to maintain quality
-              </p>
-            </div>
+      referrerId = referralData.createdBy;
+      isInstantVerification = true;
+    }
 
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
-              <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                Exclusive Benefits
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-                Receive claps, build audience, invite other artists
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    // Determine artist status
+    const artistStatus = isInstantVerification ? 'verified_artist' : 'pending_artist';
+
+    // Create or update user
+    const userData = {
+      farcasterFid: parseInt(farcasterFid),
+      username,
+      displayName: displayName || username,
+      pfpUrl: pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+      bio: bio || '',
+      artistStatus,
+      verificationNotes: applicationMessage || 'Applied via referral code',
+      referredBy: referrerId,
+      totalPoints: 0,
+      weeklyPoints: 0,
+      monthlyPoints: 0,
+      supportGiven: 0,
+      supportReceived: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    let user;
+
+    if (existingUser) {
+      // Update existing user
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('id', existingUser.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      user = updatedUser;
+    } else {
+      // Create new user
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          id: `user_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          ...userData
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      user = newUser;
+    }
+
+    // Mark referral code as used if instant verification
+    if (isInstantVerification && referralCode) {
+      const { error: referralUpdateError } = await supabase
+        .from('referral_codes')
+        .update({
+          used: true,
+          usedBy: user.id,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('code', referralCode.toUpperCase());
+
+      if (referralUpdateError) {
+        console.error('Error marking referral code as used:', referralUpdateError);
+        // Don't fail the whole request for this
+      }
+
+      // Log the referral activity
+      const { error: activityError } = await supabase
+        .from('activities')
+        .insert({
+          id: `activity_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          userId: user.id,
+          activityType: 'ARTIST_DISCOVERY',
+          pointsEarned: 0,
+          targetUserId: referrerId,
+          metadata: {
+            referralCode: referralCode,
+            instantVerification: true
+          },
+          processed: true,
+          createdAt: new Date().toISOString()
+        });
+
+      if (activityError) {
+        console.error('Error logging referral activity:', activityError);
+      }
+    }
+
+    // Return success response
+    const message = isInstantVerification
+      ? `🎉 Welcome to Art Claps! You've been instantly verified and can now receive claps from supporters. Start sharing your art!`
+      : `✨ Application submitted successfully! We'll review your application and get back to you soon. Thank you for wanting to join our community!`;
+
+    return NextResponse.json({
+      success: true,
+      message,
+      user: {
+        id: user.id,
+        artistStatus: user.artistStatus,
+        instantVerification: isInstantVerification
+      }
+    });
+
+  } catch (error) {
+    console.error('Error processing artist application:', error);
+    return NextResponse.json(
+      { error: 'Failed to process application' },
+      { status: 500 }
+    );
+  }
 }

@@ -12,20 +12,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
-    const verified = searchParams.get('verified') === 'true';
     const currentUserFid = searchParams.get('currentUserFid');
 
-    // Build query
-    let query = supabase
+    // ONLY show verified artists in discovery
+    const { data: artists, error, count } = await supabase
       .from('users')
-      .select('*', { count: 'exact' });
-
-    if (verified) {
-      query = query.eq('verifiedArtist', true);
-    }
-
-    const { data: artists, error, count } = await query
-      .order('verifiedArtist', { ascending: false })
+      .select('*', { count: 'exact' })
+      .eq('artistStatus', 'verified_artist') // ONLY verified artists
       .order('supportReceived', { ascending: false })
       .order('totalPoints', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -66,13 +59,14 @@ export async function GET(request: NextRequest) {
       username: artist.username,
       displayName: artist.displayName || artist.username,
       pfpUrl: artist.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artist.username}`,
-      bio: artist.bio || `Artist on Farcaster • @${artist.username}`,
-      verifiedArtist: artist.verifiedArtist,
+      bio: artist.bio || `Verified artist on Farcaster • @${artist.username}`,
+      verifiedArtist: true, // All results are verified artists
       claps: artist.supportReceived,
-      totalActivities: 0, // We can add this later if needed
-      connections: 0, // We can add this later if needed
+      totalActivities: 0,
+      connections: 0,
       joinedAt: artist.createdAt,
-      alreadyClappedToday: todaysClaps.includes(artist.id)
+      alreadyClappedToday: todaysClaps.includes(artist.id),
+      artistStatus: artist.artistStatus
     })) || [];
 
     return NextResponse.json({
@@ -95,10 +89,20 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Updated POST to handle artist applications
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { farcasterFid, username, displayName, pfpUrl, bio, verifyAsArtist } = body;
+    const { 
+      farcasterFid, 
+      username, 
+      displayName, 
+      pfpUrl, 
+      bio, 
+      portfolioUrl,
+      referralCode,
+      applicationMessage
+    } = body;
 
     if (!farcasterFid || !username) {
       return NextResponse.json(
@@ -107,40 +111,113 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: artist, error } = await supabase
+    // Check if user exists
+    const { data: existingUser } = await supabase
       .from('users')
-      .upsert({
-        farcasterFid: parseInt(farcasterFid),
-        username,
-        displayName: displayName || username,
-        pfpUrl,
-        bio,
-        verifiedArtist: verifyAsArtist || false,
-        updatedAt: new Date().toISOString()
-      }, {
-        onConflict: 'farcasterFid'
-      })
-      .select()
+      .select('*')
+      .eq('farcasterFid', parseInt(farcasterFid))
       .single();
 
-    if (error) throw error;
+    let artistStatus = 'supporter'; // Default for new users
+    let referredBy = null;
+
+    // Check referral code if provided
+    if (referralCode) {
+      const { data: validCode } = await supabase
+        .from('referral_codes')
+        .select('*')
+        .eq('code', referralCode)
+        .eq('used', false)
+        .single();
+
+      if (validCode) {
+        artistStatus = 'verified_artist'; // Auto-verify with valid referral
+        referredBy = validCode.createdBy;
+        
+        // Mark referral code as used
+        await supabase
+          .from('referral_codes')
+          .update({ 
+            used: true, 
+            usedBy: existingUser?.id || 'pending'
+          })
+          .eq('code', referralCode);
+      } else {
+        return NextResponse.json(
+          { error: 'Invalid or expired referral code' },
+          { status: 400 }
+        );
+      }
+    } else if (applicationMessage) {
+      // Manual application - needs approval
+      artistStatus = 'pending_artist';
+    }
+
+    const userData = {
+      farcasterFid: parseInt(farcasterFid),
+      username,
+      displayName: displayName || username,
+      pfpUrl,
+      bio,
+      artistStatus,
+      referredBy,
+      verificationNotes: applicationMessage || `Applied via ${referralCode ? 'referral' : 'manual application'}`,
+      updatedAt: new Date().toISOString()
+    };
+
+    let user;
+    if (existingUser) {
+      // Update existing user
+      const { data, error } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('farcasterFid', parseInt(farcasterFid))
+        .select()
+        .single();
+
+      if (error) throw error;
+      user = data;
+    } else {
+      // Create new user
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          ...userData,
+          totalPoints: 0,
+          weeklyPoints: 0,
+          monthlyPoints: 0,
+          supportGiven: 0,
+          supportReceived: 0
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      user = data;
+    }
+
+    const message = artistStatus === 'verified_artist' 
+      ? 'Welcome! You are now a verified artist.' 
+      : artistStatus === 'pending_artist'
+      ? 'Application submitted! Awaiting approval.'
+      : 'Account updated successfully.';
 
     return NextResponse.json({
       success: true,
-      message: 'Artist created/updated successfully',
-      artist: {
-        id: artist.id,
-        fid: artist.farcasterFid,
-        username: artist.username,
-        displayName: artist.displayName,
-        verifiedArtist: artist.verifiedArtist
+      message,
+      user: {
+        id: user.id,
+        fid: user.farcasterFid,
+        username: user.username,
+        displayName: user.displayName,
+        artistStatus: user.artistStatus
       }
     });
 
   } catch (error) {
     console.error('Error creating/updating artist:', error);
     return NextResponse.json(
-      { error: 'Failed to create/update artist' },
+      { error: 'Failed to process artist application' },
       { status: 500 }
     );
   }

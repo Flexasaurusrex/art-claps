@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProfile } from '@farcaster/auth-kit';
 
 interface Artist {
@@ -32,6 +32,27 @@ export default function DiscoverPage() {
   const [loading, setLoading] = useState<{[key: number]: boolean}>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [userRole, setUserRole] = useState<'supporter' | 'verified_artist' | 'admin'>('supporter');
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if user is admin (FID 7418)
+  const isAdmin = profile?.fid === 7418;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Initialize user and fetch data when authenticated
   useEffect(() => {
@@ -57,7 +78,7 @@ export default function DiscoverPage() {
         })
       });
 
-      // Fetch user stats
+      // Fetch user stats and determine role
       await fetchUserStats();
       
       // Fetch artists
@@ -84,6 +105,15 @@ export default function DiscoverPage() {
           supportGiven: data.user.supportGiven,
           supportReceived: data.user.supportReceived
         });
+
+        // Determine user role
+        if (isAdmin) {
+          setUserRole('admin');
+        } else if (data.user.artistStatus === 'verified_artist') {
+          setUserRole('verified_artist');
+        } else {
+          setUserRole('supporter');
+        }
       }
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -146,11 +176,6 @@ export default function DiscoverPage() {
           } : null);
         }
 
-        // Show success message briefly
-        setTimeout(() => {
-          // Could add a toast notification here
-        }, 1000);
-
       } else {
         alert(data.error || 'Failed to record clap');
       }
@@ -161,6 +186,220 @@ export default function DiscoverPage() {
       setLoading(prev => ({ ...prev, [artistFid]: false }));
     }
   };
+
+  const ProfileDropdown = () => (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'absolute',
+        top: '100%',
+        right: '0',
+        marginTop: '0.5rem',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '16px',
+        padding: '1rem',
+        minWidth: '200px',
+        zIndex: 50
+      }}
+    >
+      {/* User Info Header */}
+      <div style={{
+        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        paddingBottom: '1rem',
+        marginBottom: '1rem'
+      }}>
+        <div style={{
+          color: 'white',
+          fontWeight: '600',
+          marginBottom: '0.25rem'
+        }}>
+          {profile?.displayName}
+        </div>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          fontSize: '0.9rem',
+          marginBottom: '0.5rem'
+        }}>
+          @{profile?.username}
+        </div>
+        <div style={{
+          display: 'inline-block',
+          background: userRole === 'admin' 
+            ? 'rgba(239, 68, 68, 0.2)' 
+            : userRole === 'verified_artist'
+            ? 'rgba(34, 197, 94, 0.2)'
+            : 'rgba(59, 130, 246, 0.2)',
+          border: `1px solid ${userRole === 'admin' 
+            ? 'rgba(239, 68, 68, 0.5)' 
+            : userRole === 'verified_artist'
+            ? 'rgba(34, 197, 94, 0.5)'
+            : 'rgba(59, 130, 246, 0.5)'}`,
+          borderRadius: '12px',
+          padding: '0.25rem 0.75rem',
+          fontSize: '0.8rem',
+          color: userRole === 'admin' 
+            ? 'rgb(239, 68, 68)' 
+            : userRole === 'verified_artist'
+            ? 'rgb(34, 197, 94)'
+            : 'rgb(59, 130, 246)',
+          fontWeight: '600'
+        }}>
+          {userRole === 'admin' ? '👑 Admin' : 
+           userRole === 'verified_artist' ? '✓ Verified Artist' : 
+           '💎 Supporter'}
+        </div>
+      </div>
+
+      {/* Navigation Links */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        
+        {/* Admin Panel - Only for admins */}
+        {userRole === 'admin' && (
+          <a
+            href="/admin"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: 'white',
+              textDecoration: 'none',
+              padding: '0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.2s ease',
+              fontSize: '0.95rem'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <span>👑</span>
+            <span>Admin Panel</span>
+          </a>
+        )}
+
+        {/* Referral Codes - For verified artists and admins */}
+        {(userRole === 'verified_artist' || userRole === 'admin') && (
+          <a
+            href="/referral-codes"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textDecoration: 'none',
+              padding: '0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.2s ease',
+              fontSize: '0.95rem',
+              position: 'relative'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              alert('🚧 Referral codes page needs auth fix - coming soon!');
+            }}
+          >
+            <span>🎟️</span>
+            <span>My Referral Codes</span>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(Soon)</span>
+          </a>
+        )}
+
+        {/* Apply to be Artist - Only for supporters */}
+        {userRole === 'supporter' && (
+          <a
+            href="/apply"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textDecoration: 'none',
+              padding: '0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.2s ease',
+              fontSize: '0.95rem'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              alert('🚧 Apply page needs auth fix - coming soon!');
+            }}
+          >
+            <span>🎨</span>
+            <span>Apply to be Artist</span>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(Soon)</span>
+          </a>
+        )}
+
+        <div style={{
+          height: '1px',
+          background: 'rgba(255, 255, 255, 0.2)',
+          margin: '0.5rem 0'
+        }} />
+
+        {/* Home */}
+        <a
+          href="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            transition: 'background 0.2s ease',
+            fontSize: '0.95rem'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <span>🏠</span>
+          <span>Home</span>
+        </a>
+
+        {/* Sign Out */}
+        <button
+          onClick={() => {
+            // Add sign out logic here if needed
+            window.location.href = '/';
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.8)',
+            background: 'transparent',
+            border: 'none',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            transition: 'background 0.2s ease',
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <span>🚪</span>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  );
 
   // Loading state
   if (isLoading) {
@@ -267,22 +506,60 @@ export default function DiscoverPage() {
             </div>
           )}
           
-          {/* User Profile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <img 
-              src={profile.pfpUrl} 
-              alt={profile.displayName}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: '2px solid rgba(255, 255, 255, 0.3)'
+          {/* User Profile with Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <div 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '1rem',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                borderRadius: '12px',
+                transition: 'background 0.2s ease'
               }}
-            />
-            <div style={{ color: 'white' }}>
-              <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseOut={(e) => {
+                if (!showProfileDropdown) {
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
+              <img 
+                src={profile.pfpUrl} 
+                alt={profile.displayName}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  border: '2px solid rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              <div style={{ color: 'white' }}>
+                <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
+              </div>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.7)"
+                strokeWidth="2"
+                style={{
+                  transform: showProfileDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease'
+                }}
+              >
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
             </div>
+
+            {/* Dropdown Menu */}
+            {showProfileDropdown && <ProfileDropdown />}
           </div>
         </div>
       </header>

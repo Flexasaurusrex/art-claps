@@ -38,11 +38,8 @@ export default function HomePage() {
         </div>
         
         <div style={{
-          background: 'rgba(255, 255, 255, 0.2)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '50px',
-          padding: '0.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.3)'
+          display: 'flex',
+          justifyContent: 'center'
         }}>
           <SignInButton />
         </div>
@@ -80,10 +77,11 @@ export default function HomePage() {
             </span>
             <br />
             <span style={{
-              background: 'linear-gradient(90deg, #ffd700 0%, #ff6b6b 25%, #4ecdc4 50%, #45b7d1 75%, #96ceb4 100%)',
+              background: 'linear-gradient(90deg, #ffd700 0%, #ff6b6b 20%, #4ecdc4 40%, #45b7d1 60%, #96ceb4 80%, #f093fb 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              backgroundClip: 'text',
+              display: 'inline-block'
             }}>
               Earn Rewards.
             </span>

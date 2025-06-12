@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useProfile } from '@farcaster/auth-kit';
+import { useRouter } from 'next/navigation';
 
 interface Artist {
   id: string;
@@ -27,6 +28,7 @@ interface UserStats {
 
 export default function DiscoverPage() {
   const { isAuthenticated, profile } = useProfile();
+  const router = useRouter();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState<{[key: number]: boolean}>({});
@@ -300,18 +302,22 @@ export default function DiscoverPage() {
         
         {/* Admin Panel - Only for admins */}
         {userRole === 'admin' && (
-          <a
-            href="/admin"
+          <button
+            onClick={() => router.push('/admin')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem',
               color: 'white',
-              textDecoration: 'none',
+              background: 'transparent',
+              border: 'none',
               padding: '0.75rem',
               borderRadius: '12px',
               transition: 'background 0.2s ease',
-              fontSize: '0.95rem'
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              width: '100%',
+              textAlign: 'left'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -322,22 +328,26 @@ export default function DiscoverPage() {
           >
             <span>👑</span>
             <span>Admin Panel</span>
-          </a>
+          </button>
         )}
 
         {/* Referral Codes - Now available for all users */}
-        <a
-          href="/referral-codes"
+        <button
+          onClick={() => router.push('/referral-codes')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',
             color: 'white',
-            textDecoration: 'none',
+            background: 'transparent',
+            border: 'none',
             padding: '0.75rem',
             borderRadius: '12px',
             transition: 'background 0.2s ease',
-            fontSize: '0.95rem'
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left'
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -348,22 +358,26 @@ export default function DiscoverPage() {
         >
           <span>🎟️</span>
           <span>Referral Codes</span>
-        </a>
+        </button>
 
-        {/* Apply to be Artist - Only for supporters, no blocking alert */}
+        {/* Apply to be Artist - Only for supporters */}
         {userRole === 'supporter' && (
-          <a
-            href="/apply"
+          <button
+            onClick={() => router.push('/apply')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem',
               color: 'white',
-              textDecoration: 'none',
+              background: 'transparent',
+              border: 'none',
               padding: '0.75rem',
               borderRadius: '12px',
               transition: 'background 0.2s ease',
-              fontSize: '0.95rem'
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              width: '100%',
+              textAlign: 'left'
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -374,7 +388,7 @@ export default function DiscoverPage() {
           >
             <span>🎨</span>
             <span>Apply to be Artist</span>
-          </a>
+          </button>
         )}
 
         <div style={{
@@ -384,18 +398,22 @@ export default function DiscoverPage() {
         }} />
 
         {/* Home */}
-        <a
-          href="/"
+        <button
+          onClick={() => router.push('/')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',
             color: 'white',
-            textDecoration: 'none',
+            background: 'transparent',
+            border: 'none',
             padding: '0.75rem',
             borderRadius: '12px',
             transition: 'background 0.2s ease',
-            fontSize: '0.95rem'
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left'
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -406,7 +424,7 @@ export default function DiscoverPage() {
         >
           <span>🏠</span>
           <span>Home</span>
-        </a>
+        </button>
 
         {/* Sign Out */}
         <button
@@ -626,12 +644,87 @@ export default function DiscoverPage() {
             fontSize: '1.2rem',
             color: 'rgba(255, 255, 255, 0.8)',
             textAlign: 'center',
-            marginBottom: '3rem',
+            marginBottom: '1rem',
             maxWidth: '600px',
-            margin: '0 auto 3rem auto'
+            margin: '0 auto 1rem auto'
           }}>
             Support amazing Farcaster artists and earn CLAPS points for genuine engagement
           </p>
+
+          {/* Sync Farcaster Activity Button */}
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <button
+              onClick={handleSyncFarcaster}
+              disabled={syncingFarcaster}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '12px',
+                fontWeight: '600',
+                transition: 'all 0.2s ease',
+                background: syncingFarcaster
+                  ? 'rgba(107, 114, 128, 1)'
+                  : 'linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119))',
+                cursor: syncingFarcaster ? 'not-allowed' : 'pointer',
+                color: 'white',
+                border: 'none',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                transform: syncingFarcaster ? 'none' : 'scale(1)',
+              }}
+              onMouseOver={(e) => {
+                if (!syncingFarcaster) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!syncingFarcaster) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              {syncingFarcaster ? (
+                <>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid transparent',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  <span>Syncing...</span>
+                </>
+              ) : (
+                <>
+                  <span>🔄</span>
+                  <span>Sync My Farcaster Activity</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Sync Message */}
+          {syncMessage && (
+            <div style={{
+              textAlign: 'center',
+              marginBottom: '2rem',
+              padding: '1rem',
+              borderRadius: '12px',
+              background: syncMessage.includes('Failed') || syncMessage.includes('Error')
+                ? 'rgba(239, 68, 68, 0.2)'
+                : 'rgba(34, 197, 94, 0.2)',
+              border: syncMessage.includes('Failed') || syncMessage.includes('Error')
+                ? '1px solid rgba(239, 68, 68, 0.3)'
+                : '1px solid rgba(34, 197, 94, 0.3)',
+              color: syncMessage.includes('Failed') || syncMessage.includes('Error')
+                ? 'rgb(248, 113, 113)'
+                : 'rgb(74, 222, 128)'
+            }}>
+              {syncMessage}
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
@@ -776,26 +869,25 @@ export default function DiscoverPage() {
                     </div>
                   </div>
 
-                  {/* Clap Button */}
-                  <div className="flex gap-2">
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
                       onClick={() => handleClap(artist.fid)}
                       disabled={loading[artist.fid] || artist.alreadyClappedToday}
-                      className={`flex-1 ${
-                        artist.alreadyClappedToday
-                          ? 'bg-rgba(34, 197, 94, 0.3)' 
-                          : 'bg-linear-gradient(45deg, #667eea 0%, #764ba2 100%)'
-                      } border-none rounded-xl py-3 px-4 text-white text-lg font-semibold cursor-${
-                        loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer'
-                      } opacity-${
-                        loading[artist.fid] || artist.alreadyClappedToday ? '70' : '100'
-                      } transition-all duration-300ms ease`}
                       style={{
+                        flex: 1,
                         background: artist.alreadyClappedToday
                           ? 'rgba(34, 197, 94, 0.3)' 
                           : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '0.75rem 1rem',
+                        color: 'white',
+                        fontSize: '1rem',
+                        fontWeight: '600',
                         cursor: loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer',
-                        opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1
+                        opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1,
+                        transition: 'all 0.3s ease'
                       }}
                     >
                       {loading[artist.fid] ? '👏 Clapping...' : 
@@ -803,19 +895,33 @@ export default function DiscoverPage() {
                        '👏 Clap for Artist (+5 CLAPS)'}
                     </button>
 
-                    <a
-                      href={`/artist/${artist.username}`}
-                      className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 rounded-xl py-3 px-4 text-white text-center font-medium transition-all duration-300ms ease hover:scale-105"
+                    <button
+                      onClick={() => router.push(`/artist/${artist.username}`)}
                       style={{
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minWidth: '120px'
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '0.75rem 1rem',
+                        color: 'white',
+                        fontSize: '1rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        minWidth: '100px'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.transform = 'scale(1)';
                       }}
                     >
                       👤 Profile
-                    </a>
+                    </button>
                   </div>
                 </div>
               ))}

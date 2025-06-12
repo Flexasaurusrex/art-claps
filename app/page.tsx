@@ -1,32 +1,273 @@
 'use client';
 
-import React from 'react';
-import { SignInButton, useProfile } from '@farcaster/auth-kit';
+import React, { useState, useEffect } from 'react';
+import { useProfile } from '@farcaster/auth-kit';
 
-export default function Home() {
+interface Artist {
+  id: string;
+  fid: number;
+  username: string;
+  displayName: string;
+  pfpUrl: string;
+  bio: string;
+  verifiedArtist: boolean;
+  claps: number;
+  totalActivities: number;
+  connections: number;
+  alreadyClappedToday: boolean;
+}
+
+interface UserStats {
+  totalPoints: number;
+  weeklyPoints: number;
+  monthlyPoints: number;
+  supportGiven: number;
+  supportReceived: number;
+}
+
+export default function DiscoverPage() {
   const { isAuthenticated, profile } = useProfile();
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState<{[key: number]: boolean}>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dashboard for authenticated users
-  if (isAuthenticated) {
+  // Initialize user and fetch data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && profile) {
+      initializeUser();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, profile]);
+
+  const initializeUser = async () => {
+    try {
+      // Register/update user in database
+      await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          farcasterFid: profile.fid,
+          username: profile.username,
+          displayName: profile.displayName,
+          pfpUrl: profile.pfpUrl,
+          bio: profile.bio
+        })
+      });
+
+      // Fetch user stats
+      await fetchUserStats();
+      
+      // Fetch artists
+      await fetchArtists();
+      
+    } catch (error) {
+      console.error('Error initializing user:', error);
+      setError('Failed to initialize user data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUserStats = async () => {
+    try {
+      const response = await fetch(`/api/user?fid=${profile.fid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUserStats({
+          totalPoints: data.user.totalPoints,
+          weeklyPoints: data.user.weeklyPoints,
+          monthlyPoints: data.user.monthlyPoints,
+          supportGiven: data.user.supportGiven,
+          supportReceived: data.user.supportReceived
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const fetchArtists = async () => {
+    try {
+      const response = await fetch(`/api/artists?limit=20&currentUserFid=${profile.fid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setArtists(data.artists);
+      } else {
+        setError('Failed to fetch artists');
+      }
+    } catch (error) {
+      console.error('Error fetching artists:', error);
+      setError('Failed to fetch artists');
+    }
+  };
+
+  const handleClap = async (artistFid: number) => {
+    if (!isAuthenticated || !profile) return;
+    
+    setLoading(prev => ({ ...prev, [artistFid]: true }));
+    
+    try {
+      const response = await fetch('/api/clap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userFid: profile.fid,
+          targetFid: artistFid
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local artist state
+        setArtists(prev => prev.map(artist => 
+          artist.fid === artistFid 
+            ? { 
+                ...artist, 
+                claps: artist.claps + 1,
+                alreadyClappedToday: true 
+              }
+            : artist
+        ));
+
+        // Update user stats
+        if (userStats) {
+          setUserStats(prev => prev ? {
+            ...prev,
+            totalPoints: data.newTotalPoints,
+            weeklyPoints: prev.weeklyPoints + 5,
+            monthlyPoints: prev.monthlyPoints + 5,
+            supportGiven: prev.supportGiven + 1
+          } : null);
+        }
+
+        // Show success message briefly
+        setTimeout(() => {
+          // Could add a toast notification here
+        }, 1000);
+
+      } else {
+        alert(data.error || 'Failed to record clap');
+      }
+    } catch (error) {
+      console.error('Error clapping:', error);
+      alert('Failed to record clap. Please try again.');
+    } finally {
+      setLoading(prev => ({ ...prev, [artistFid]: false }));
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
     return (
       <div style={{
         minHeight: '100vh',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1.5rem'
       }}>
-        <header style={{
-          padding: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+        Loading Art Claps... 🎨
+      </div>
+    );
+  }
+
+  // Not authenticated state
+  if (!isAuthenticated || !profile) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1.5rem',
+        textAlign: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{ marginBottom: '2rem' }}>🔐</div>
+        <div style={{ marginBottom: '2rem' }}>Please sign in to discover artists</div>
+        <a 
+          href="/"
+          style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '12px',
+            padding: '1rem 2rem',
+            color: 'white',
+            textDecoration: 'none',
+            fontSize: '1rem'
+          }}
+        >
+          ← Back to Sign In
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      {/* Header with User Stats */}
+      <header style={{
+        padding: '2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          color: 'white'
         }}>
-          <div style={{
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            color: 'white'
-          }}>
+          <a href="/" style={{ color: 'white', textDecoration: 'none' }}>
             Art Claps
-          </div>
+          </a>
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          {/* User Stats Display */}
+          {userStats && (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1rem',
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'center'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>
+                  {userStats.totalPoints.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                  Total CLAPS
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>
+                  {userStats.weeklyPoints}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                  This Week
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* User Profile */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <img 
               src={profile.pfpUrl} 
@@ -43,376 +284,218 @@ export default function Home() {
               <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
             </div>
           </div>
-        </header>
-
-        <main style={{ padding: '0 2rem' }}>
-          <div style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            paddingTop: '2rem'
-          }}>
-            <h1 style={{
-              fontSize: '3rem',
-              fontWeight: '800',
-              color: 'white',
-              marginBottom: '2rem',
-              textAlign: 'center'
-            }}>
-              🎉 Welcome {profile.displayName}!
-            </h1>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '20px',
-              padding: '2rem',
-              textAlign: 'center',
-              marginBottom: '3rem'
-            }}>
-              <h2 style={{
-                color: 'white',
-                fontSize: '1.5rem',
-                fontWeight: '600',
-                marginBottom: '1rem'
-              }}>
-                ✅ REAL FARCASTER AUTH WORKING!
-              </h2>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginBottom: '1rem'
-              }}>
-                FID: {profile.fid} • Username: @{profile.username}
-              </p>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem'
-              }}>
-                Official Farcaster AuthKit implementation working perfectly! 🚀
-              </p>
-            </div>
-
-            {/* Stats Cards */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '2rem',
-              marginBottom: '4rem'
-            }}>
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '16px',
-                padding: '2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👏</div>
-                <h3 style={{
-                  color: 'white',
-                  fontSize: '2rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem'
-                }}>
-                  247
-                </h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Claps Score</p>
-              </div>
-
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '16px',
-                padding: '2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎨</div>
-                <h3 style={{
-                  color: 'white',
-                  fontSize: '2rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem'
-                }}>
-                  12
-                </h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Artists Supported</p>
-              </div>
-
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '16px',
-                padding: '2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
-                <h3 style={{
-                  color: 'white',
-                  fontSize: '2rem',
-                  fontWeight: '700',
-                  marginBottom: '0.5rem'
-                }}>
-                  #34
-                </h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Community Rank</p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '1rem',
-              marginBottom: '4rem'
-            }}>
-              <a 
-                href="/discover"
-                style={{
-                  background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '1rem 2rem',
-                  color: 'white',
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 25px rgba(118, 75, 162, 0.3)',
-                  textDecoration: 'none',
-                  display: 'inline-block'
-                }}
-              >
-                Discover Artists
-              </a>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Landing page for unauthenticated users  
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
-      <header style={{
-        padding: '2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          color: 'white'
-        }}>
-          Art Claps
-        </div>
-        <div style={{ color: 'white' }}>
-          <SignInButton />
         </div>
       </header>
 
-      <main style={{ padding: '0 2rem' }}>
+      {/* Main Content */}
+      <main style={{ padding: '0 2rem 4rem 2rem' }}>
         <div style={{
           maxWidth: '1200px',
-          margin: '0 auto',
-          textAlign: 'center',
-          paddingTop: '4rem'
+          margin: '0 auto'
         }}>
           <h1 style={{
-            fontSize: 'clamp(3rem, 8vw, 6rem)',
+            fontSize: '3rem',
             fontWeight: '800',
             color: 'white',
-            marginBottom: '1.5rem',
-            lineHeight: '1.1',
-            letterSpacing: '-0.03em'
+            marginBottom: '1rem',
+            textAlign: 'center'
           }}>
-            Support Artists.<br />
-            <span style={{
-              background: 'linear-gradient(45deg, #ffd89b 0%, #19547b 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              Earn Rewards.
-            </span>
+            🎨 Discover Artists
           </h1>
-
+          
           <p style={{
-            fontSize: '1.25rem',
-            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: '1.2rem',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textAlign: 'center',
             marginBottom: '3rem',
             maxWidth: '600px',
-            margin: '0 auto 3rem auto',
-            lineHeight: '1.6'
+            margin: '0 auto 3rem auto'
           }}>
-            The SocialFi platform where supporting Farcaster artists earns you points, 
-            builds community, and rewards authentic engagement.
+            Support amazing Farcaster artists and earn CLAPS points for genuine engagement
           </p>
 
-          {/* Feature Cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '4rem'
-          }}>
+          {/* Error Display */}
+          {error && (
             <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
               borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>👏</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Clap to Earn
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Support artists and earn points for genuine engagement
-              </p>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎨</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Discover Artists
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Find and connect with amazing creators on Farcaster
-              </p>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🏆</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Build Reputation
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Climb the leaderboard as a true community supporter
-              </p>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(15px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💎</div>
-              <h4 style={{
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                marginBottom: '0.5rem'
-              }}>
-                Unlock Rewards
-              </h4>
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '0.9rem',
-                lineHeight: '1.4'
-              }}>
-                Redeem points for exclusive artist collaborations
-              </p>
-            </div>
-          </div>
-
-          {/* CTA Section */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '20px',
-            padding: '3rem 2rem',
-            textAlign: 'center',
-            marginBottom: '4rem'
-          }}>
-            <h2 style={{
+              padding: '1rem',
               color: 'white',
-              fontSize: '2.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem'
+              textAlign: 'center',
+              marginBottom: '2rem'
             }}>
-              Ready to Start?
-            </h2>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1.1rem',
-              marginBottom: '2rem',
-              maxWidth: '500px',
-              margin: '0 auto 2rem auto'
-            }}>
-              Connect your Farcaster account and start supporting artists today.
-            </p>
-            <div style={{ 
-              fontSize: '1.2rem',
-              color: 'white'
-            }}>
-              <SignInButton />
+              {error}
             </div>
-          </div>
+          )}
+
+          {/* Artists Grid */}
+          {artists.length > 0 ? (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+              gap: '2rem'
+            }}>
+              {artists.map((artist) => (
+                <div
+                  key={artist.fid}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(20px)',
+                    border: artist.verifiedArtist 
+                      ? '2px solid rgba(34, 197, 94, 0.5)' 
+                      : '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '20px',
+                    padding: '2rem',
+                    transition: 'transform 0.3s ease',
+                    position: 'relative'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {/* Verified Badge */}
+                  {artist.verifiedArtist && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '1rem',
+                      right: '1rem',
+                      background: 'rgba(34, 197, 94, 0.2)',
+                      border: '1px solid rgba(34, 197, 94, 0.5)',
+                      borderRadius: '20px',
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.8rem',
+                      color: 'rgb(34, 197, 94)',
+                      fontWeight: '600'
+                    }}>
+                      ✓ Verified Artist
+                    </div>
+                  )}
+
+                  {/* Artist Header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <img
+                      src={artist.pfpUrl}
+                      alt={artist.displayName}
+                      style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        border: '3px solid rgba(255, 255, 255, 0.3)'
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{
+                        color: 'white',
+                        fontSize: '1.3rem',
+                        fontWeight: '700',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {artist.displayName}
+                      </h3>
+                      <p style={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '1rem'
+                      }}>
+                        @{artist.username}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  <p style={{
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    lineHeight: '1.5',
+                    marginBottom: '1.5rem'
+                  }}>
+                    {artist.bio}
+                  </p>
+
+                  {/* Stats */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '2rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        color: 'white',
+                        fontSize: '1.2rem',
+                        fontWeight: '700'
+                      }}>
+                        {artist.claps.toLocaleString()}
+                      </div>
+                      <div style={{
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontSize: '0.9rem'
+                      }}>
+                        Claps
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        color: 'white',
+                        fontSize: '1.2rem',
+                        fontWeight: '700'
+                      }}>
+                        {artist.connections}
+                      </div>
+                      <div style={{
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontSize: '0.9rem'
+                      }}>
+                        Connections
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clap Button */}
+                  <button
+                    onClick={() => handleClap(artist.fid)}
+                    disabled={loading[artist.fid] || artist.alreadyClappedToday}
+                    style={{
+                      width: '100%',
+                      background: artist.alreadyClappedToday
+                        ? 'rgba(34, 197, 94, 0.3)' 
+                        : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '1rem',
+                      color: 'white',
+                      fontSize: '1.1rem',
+                      fontWeight: '600',
+                      cursor: loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer',
+                      opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1,
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {loading[artist.fid] ? '👏 Clapping...' : 
+                     artist.alreadyClappedToday ? '✅ Clapped Today!' : 
+                     '👏 Clap for Artist (+5 CLAPS)'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '1.2rem',
+              padding: '4rem 2rem'
+            }}>
+              No artists found. Check back soon!
+            </div>
+          )}
         </div>
       </main>
-
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center',
-        padding: '2rem',
-        color: 'rgba(255, 255, 255, 0.6)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <p>Art Claps • Building community through authentic support</p>
-      </footer>
     </div>
   );
 }

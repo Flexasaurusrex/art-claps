@@ -313,9 +313,36 @@ export default function HomePage() {
 
           <div style={{
             display: 'flex',
-            justifyContent: 'center'
+            flexDirection: 'column',
+            gap: '1rem',
+            alignItems: 'center'
           }}>
             <SignInButton />
+            
+            {/* Apply to Become Artist Button */}
+            <a 
+              href="/apply"
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '12px',
+                padding: '1rem 2rem',
+                color: 'white',
+                textDecoration: 'none',
+                fontSize: '1rem',
+                fontWeight: '500',
+                transition: 'all 0.3s ease',
+                display: 'inline-block'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              🎨 Apply to Become Artist
+            </a>
           </div>
         </div>
 

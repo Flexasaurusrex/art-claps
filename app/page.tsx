@@ -193,8 +193,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <div style={{
-        position: 'absolute',
-        bottom: '2rem',
+        marginTop: '3rem',
         fontSize: '0.9rem',
         color: 'rgba(255, 255, 255, 0.6)'
       }}>

@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     } catch (hubError) {
       console.error('Farcaster Hub API error:', hubError);
       return NextResponse.json({
-        error: `Failed to connect to Farcaster Hub: ${hubError.message}`,
+        error: `Failed to connect to Farcaster Hub: ${hubError instanceof Error ? hubError.message : String(hubError)}`,
         step: 'farcaster_hub_test'
       }, { status: 500 });
     }
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     } catch (reactionError) {
       console.error('Reactions fetch error:', reactionError);
       return NextResponse.json({
-        error: `Failed to fetch reactions: ${reactionError.message}`,
+        error: `Failed to fetch reactions: ${reactionError instanceof Error ? reactionError.message : String(reactionError)}`,
         step: 'fetch_reactions'
       }, { status: 500 });
     }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('General sync error:', error);
     return NextResponse.json({
-      error: `Sync failed: ${error.message}`,
+      error: `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
       step: 'general_error'
     }, { status: 500 });
   }

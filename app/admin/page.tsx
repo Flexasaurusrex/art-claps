@@ -32,24 +32,40 @@ export default function AdminPage() {
   const isAdmin = profile?.fid === 7418; // Replace with your actual FID
 
   useEffect(() => {
+    // Debug: Log auth state
+    console.log('Admin page - Auth state:', { 
+      isAuthenticated, 
+      profile: profile?.fid, 
+      isAdmin: profile?.fid === 7418 
+    });
+
     // Wait a moment for auth to load
     const timer = setTimeout(() => {
+      console.log('Admin page - After timeout:', { 
+        isAuthenticated, 
+        profile: profile?.fid, 
+        isAdmin: profile?.fid === 7418 
+      });
+      
       setAuthChecked(true);
       
       if (!isAuthenticated) {
+        console.log('Redirecting: Not authenticated');
         router.push('/');
         return;
       }
       
       if (isAuthenticated && !isAdmin) {
+        console.log('Redirecting: Not admin');
         router.push('/discover');
         return;
       }
 
       if (isAdmin) {
+        console.log('Loading admin data...');
         fetchPendingArtists();
       }
-    }, 1000); // Give auth time to load
+    }, 2000); // Increase to 2 seconds
 
     return () => clearTimeout(timer);
   }, [isAuthenticated, isAdmin, router]);

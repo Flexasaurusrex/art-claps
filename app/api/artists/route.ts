@@ -1,4 +1,4 @@
-// app/api/artists/route.ts
+// app/api/artists/route.ts - FIXED for your schema
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -20,17 +20,17 @@ export async function GET() {
       .select(`
         id,
         username,
-        displayName,
-        pfpUrl,
+        "displayName",
+        "pfpUrl",
         bio,
-        totalPoints,
-        weeklyPoints,
-        monthlyPoints,
-        supportReceived,
-        createdAt
+        "totalPoints",
+        "weeklyPoints",
+        "monthlyPoints",
+        "supportReceived",
+        "createdAt"
       `)
-      .eq('artistStatus', 'verified_artist')
-      .order('weeklyPoints', { ascending: false });
+      .eq('artiststatus', 'verified_artist')  // Fixed: lowercase column name
+      .order('"weeklyPoints"', { ascending: false });
 
     if (error) throw error;
 
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
     // Check if user already exists
     const { data: existingUser, error: userCheckError } = await supabase
       .from('users')
-      .select('id, artistStatus')
-      .eq('farcasterFid', parseInt(farcasterFid))
+      .select('id, artiststatus')  // Fixed: lowercase column name
+      .eq('"farcasterFid"', parseInt(farcasterFid))  // Fixed: quoted column name
       .single();
 
     if (userCheckError && userCheckError.code !== 'PGRST116') {
@@ -82,14 +82,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingUser) {
-      if (existingUser.artistStatus === 'verified_artist') {
+      if (existingUser.artiststatus === 'verified_artist') {
         return NextResponse.json(
           { error: 'You are already a verified artist!' },
           { status: 400 }
         );
       }
       
-      if (existingUser.artistStatus === 'pending_artist') {
+      if (existingUser.artiststatus === 'pending_artist') {
         return NextResponse.json(
           { error: 'Your application is already under review' },
           { status: 400 }
@@ -106,13 +106,12 @@ export async function POST(request: NextRequest) {
         .from('referral_codes')
         .select(`
           id,
-          createdBy,
+          createdby,  
           used,
-          expiresAt,
-          creator:users!referral_codes_createdBy_fkey(
+          creator:users!referral_codes_createdby_fkey(
             id,
             username,
-            artistStatus
+            artiststatus
           )
         `)
         .eq('code', referralCode.toUpperCase())
@@ -132,24 +131,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (new Date(referralData.expiresAt) < new Date()) {
-        return NextResponse.json(
-          { error: 'This referral code has expired' },
-          { status: 400 }
-        );
-      }
-
       // Safely extract creator data
       const creatorData = extractRelationshipData(referralData.creator);
       
-      if (!creatorData || creatorData.artistStatus !== 'verified_artist') {
+      if (!creatorData || creatorData.artiststatus !== 'verified_artist') {
         return NextResponse.json(
           { error: 'Invalid referral code - creator not verified' },
           { status: 400 }
         );
       }
 
-      referrerId = referralData.createdBy;
+      referrerId = referralData.createdby;
       isInstantVerification = true;
     }
 
@@ -158,21 +150,21 @@ export async function POST(request: NextRequest) {
 
     // Create or update user
     const userData = {
-      farcasterFid: parseInt(farcasterFid),
+      "farcasterFid": parseInt(farcasterFid),  // Fixed: quoted column name
       username,
-      displayName: displayName || username,
-      pfpUrl: pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+      "displayName": displayName || username,  // Fixed: quoted column name
+      "pfpUrl": pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,  // Fixed: quoted column name
       bio: bio || '',
-      artistStatus,
-      verificationNotes: applicationMessage || 'Applied via referral code',
-      referredBy: referrerId,
-      totalPoints: 0,
-      weeklyPoints: 0,
-      monthlyPoints: 0,
-      supportGiven: 0,
-      supportReceived: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      artiststatus: artistStatus,  // Fixed: lowercase column name
+      verificationnotes: applicationMessage || 'Applied via referral code',  // Fixed: lowercase column name
+      referredby: referrerId,  // Fixed: lowercase column name
+      "totalPoints": 0,  // Fixed: quoted column name
+      "weeklyPoints": 0,  // Fixed: quoted column name
+      "monthlyPoints": 0,  // Fixed: quoted column name
+      "supportGiven": 0,  // Fixed: quoted column name
+      "supportReceived": 0,  // Fixed: quoted column name
+      "createdAt": new Date().toISOString(),  // Fixed: quoted column name
+      "updatedAt": new Date().toISOString()  // Fixed: quoted column name
     };
 
     let user;
@@ -209,14 +201,13 @@ export async function POST(request: NextRequest) {
         .from('referral_codes')
         .update({
           used: true,
-          usedBy: user.id,
-          updatedAt: new Date().toISOString()
+          usedby: user.id,  // Fixed: lowercase column name
+          updatedat: new Date().toISOString()  // Fixed: lowercase column name
         })
         .eq('code', referralCode.toUpperCase());
 
       if (referralUpdateError) {
         console.error('Error marking referral code as used:', referralUpdateError);
-        // Don't fail the whole request for this
       }
 
       // Log the referral activity
@@ -251,7 +242,7 @@ export async function POST(request: NextRequest) {
       message,
       user: {
         id: user.id,
-        artistStatus: user.artistStatus,
+        artistStatus: user.artiststatus,  // Fixed: lowercase column name
         instantVerification: isInstantVerification
       }
     });

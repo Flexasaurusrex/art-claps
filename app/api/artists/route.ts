@@ -1,4 +1,4 @@
-// app/api/user/route.ts
+// app/api/artists/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -7,10 +7,98 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const verified = searchParams.get('verified') === 'true';
+    const currentUserFid = searchParams.get('currentUserFid');
+
+    // Build query
+    let query = supabase
+      .from('users')
+      .select('*', { count: 'exact' });
+
+    if (verified) {
+      query = query.eq('verifiedArtist', true);
+    }
+
+    const { data: artists, error, count } = await query
+      .order('verifiedArtist', { ascending: false })
+      .order('supportReceived', { ascending: false })
+      .order('totalPoints', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    // Check which artists the current user has clapped for today
+    let todaysClaps: string[] = [];
+    if (currentUserFid) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('farcasterFid', parseInt(currentUserFid))
+        .single();
+
+      if (currentUser) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const { data: claps } = await supabase
+          .from('activities')
+          .select('targetUserId')
+          .eq('userId', currentUser.id)
+          .eq('activityType', 'CLAP_REACTION')
+          .gte('createdAt', today.toISOString())
+          .lt('createdAt', tomorrow.toISOString());
+
+        todaysClaps = claps?.map(clap => clap.targetUserId).filter(Boolean) || [];
+      }
+    }
+
+    // Format the response
+    const formattedArtists = artists?.map(artist => ({
+      id: artist.id,
+      fid: artist.farcasterFid,
+      username: artist.username,
+      displayName: artist.displayName || artist.username,
+      pfpUrl: artist.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artist.username}`,
+      bio: artist.bio || `Artist on Farcaster • @${artist.username}`,
+      verifiedArtist: artist.verifiedArtist,
+      claps: artist.supportReceived,
+      totalActivities: 0, // We can add this later if needed
+      connections: 0, // We can add this later if needed
+      joinedAt: artist.createdAt,
+      alreadyClappedToday: todaysClaps.includes(artist.id)
+    })) || [];
+
+    return NextResponse.json({
+      success: true,
+      artists: formattedArtists,
+      pagination: {
+        total: count || 0,
+        limit,
+        offset,
+        hasMore: (offset + limit) < (count || 0)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching artists:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch artists' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { farcasterFid, username, displayName, pfpUrl, bio } = body;
+    const { farcasterFid, username, displayName, pfpUrl, bio, verifyAsArtist } = body;
 
     if (!farcasterFid || !username) {
       return NextResponse.json(
@@ -19,141 +107,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: artist, error } = await supabase
       .from('users')
-      .select('*')
-      .eq('farcasterFid', farcasterFid)
+      .upsert({
+        farcasterFid: parseInt(farcasterFid),
+        username,
+        displayName: displayName || username,
+        pfpUrl,
+        bio,
+        verifiedArtist: verifyAsArtist || false,
+        updatedAt: new Date().toISOString()
+      }, {
+        onConflict: 'farcasterFid'
+      })
+      .select()
       .single();
 
-    let user;
-    if (existingUser) {
-      // Update existing user
-      const { data, error } = await supabase
-        .from('users')
-        .update({
-          username,
-          displayName: displayName || username,
-          pfpUrl,
-          bio,
-          updatedAt: new Date().toISOString()
-        })
-        .eq('farcasterFid', farcasterFid)
-        .select()
-        .single();
-
-      if (error) throw error;
-      user = data;
-    } else {
-      // Create new user
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          farcasterFid,
-          username,
-          displayName: displayName || username,
-          pfpUrl,
-          bio,
-          totalPoints: 0,
-          weeklyPoints: 0,
-          monthlyPoints: 0,
-          supportGiven: 0,
-          supportReceived: 0,
-          verifiedArtist: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      user = data;
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        farcasterFid: user.farcasterFid,
-        username: user.username,
-        displayName: user.displayName,
-        pfpUrl: user.pfpUrl,
-        totalPoints: user.totalPoints,
-        weeklyPoints: user.weeklyPoints,
-        monthlyPoints: user.monthlyPoints,
-        verifiedArtist: user.verifiedArtist
+      message: 'Artist created/updated successfully',
+      artist: {
+        id: artist.id,
+        fid: artist.farcasterFid,
+        username: artist.username,
+        displayName: artist.displayName,
+        verifiedArtist: artist.verifiedArtist
       }
     });
 
   } catch (error) {
-    console.error('Error managing user:', error);
+    console.error('Error creating/updating artist:', error);
     return NextResponse.json(
-      { error: 'Failed to create/update user' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const fid = searchParams.get('fid');
-
-    if (!fid) {
-      return NextResponse.json(
-        { error: 'Farcaster FID is required' },
-        { status: 400 }
-      );
-    }
-
-    const { data: user, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        activitiesGiven:activities!activities_userId_fkey(
-          id,
-          activityType,
-          pointsEarned,
-          createdAt
-        ),
-        activitiesReceived:activities!activities_targetUserId_fkey(
-          id,
-          activityType,
-          pointsEarned,
-          createdAt
-        )
-      `)
-      .eq('farcasterFid', fid)
-      .single();
-
-    if (error || !user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        farcasterFid: user.farcasterFid,
-        username: user.username,
-        displayName: user.displayName,
-        pfpUrl: user.pfpUrl,
-        totalPoints: user.totalPoints,
-        weeklyPoints: user.weeklyPoints,
-        monthlyPoints: user.monthlyPoints,
-        supportGiven: user.supportGiven,
-        supportReceived: user.supportReceived,
-        verifiedArtist: user.verifiedArtist,
-        recentActivitiesGiven: user.activitiesGiven?.slice(0, 10) || [],
-        recentActivitiesReceived: user.activitiesReceived?.slice(0, 10) || []
-      }
-    });
-
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch user' },
+      { error: 'Failed to create/update artist' },
       { status: 500 }
     );
   }

@@ -37,6 +37,22 @@ export default function ArtistProfilePage() {
     }
   }, [username]);
 
+  // Check auth status and try to persist
+  useEffect(() => {
+    const checkAuth = () => {
+      // Force re-check auth status on page load
+      if (!isAuthenticated && typeof window !== 'undefined') {
+        // Small delay to let auth provider initialize
+        setTimeout(() => {
+          if (!isAuthenticated) {
+            console.log('Auth not detected on profile page');
+          }
+        }, 1000);
+      }
+    };
+    checkAuth();
+  }, [isAuthenticated]);
+
   const fetchArtistProfile = async () => {
     try {
       const response = await fetch(`/api/artist?username=${username}`);
@@ -79,9 +95,12 @@ export default function ArtistProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/discover" className="text-white hover:text-purple-200 transition-colors">
+          <button 
+            onClick={() => router.push('/discover')}
+            className="text-white hover:text-purple-200 transition-colors cursor-pointer bg-transparent border-none"
+          >
             ← Back to Discover
-          </Link>
+          </button>
         </div>
       </header>
 

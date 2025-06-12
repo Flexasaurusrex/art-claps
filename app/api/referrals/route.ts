@@ -4,8 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Helper function to safely extract data from Supabase foreign key relationships
+function extractRelationshipData<T>(data: T | T[] | null): T | null {
+  if (!data) return null;
+  return Array.isArray(data) ? data[0] : data;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,16 +63,21 @@ export async function GET(request: NextRequest) {
 
     if (codesError) throw codesError;
 
-    const formattedCodes = codes?.map(code => ({
-      id: code.id,
-      code: code.code,
-      used: code.used,
-      createdAt: code.createdAt,
-      usedBy: code.usedBy ? {
-        username: code.usedBy.username,
-        displayName: code.usedBy.displayName
-      } : null
-    })) || [];
+    const formattedCodes = codes?.map(code => {
+      // Safely handle usedBy relationship data (can be array or single object)
+      const usedByData = extractRelationshipData(code.usedBy);
+
+      return {
+        id: code.id,
+        code: code.code,
+        used: code.used,
+        createdAt: code.createdAt,
+        usedBy: usedByData ? {
+          username: usedByData.username,
+          displayName: usedByData.displayName
+        } : null
+      };
+    }) || [];
 
     const totalCodes = codes?.length || 0;
     const usedCodes = codes?.filter(code => code.used).length || 0;

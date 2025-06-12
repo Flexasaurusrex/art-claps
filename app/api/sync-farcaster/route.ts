@@ -19,82 +19,158 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔍 Testing database for FID: ${userFid}`);
+    console.log(`🔍 Starting Farcaster sync for FID: ${userFid}`);
 
-    // Test 1: Find user in database
+    // Get user from database
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, "farcasterFid", "username"')
       .eq('"farcasterFid"', userFid)
       .single();
 
-    if (userError) {
+    if (userError || !user) {
       return NextResponse.json({
-        error: `Database error: ${userError.message}`,
-        step: 'user_lookup'
-      }, { status: 500 });
-    }
-
-    if (!user) {
-      return NextResponse.json({
-        error: 'User not found in database',
-        step: 'user_lookup'
+        error: 'User not found in database'
       }, { status: 404 });
     }
 
-    console.log(`✅ Found user: ${user.username}`);
-
-    // Test 2: Find verified artists
+    // Get verified artists
     const { data: artists, error: artistsError } = await supabase
       .from('users')
       .select('id, "farcasterFid", "username"')
-      .eq('"artistStatus"', 'verified_artist')
-      .limit(5); // Just get a few for testing
+      .eq('"artistStatus"', 'verified_artist');
 
-    if (artistsError) {
+    if (artistsError || !artists || artists.length === 0) {
       return NextResponse.json({
-        error: `Artists query error: ${artistsError.message}`,
-        step: 'artists_lookup'
-      }, { status: 500 });
+        success: true,
+        message: 'No verified artists found to sync against',
+        activitiesDetected: 0
+      });
     }
 
-    console.log(`✅ Found ${artists?.length || 0} verified artists`);
+    console.log(`👨‍🎨 Found ${artists.length} verified artists to check`);
 
-    // Test 3: Check existing activities (to test our activity table)
-    const { data: existingActivities, error: activitiesError } = await supabase
-      .from('activities')
-      .select('id, "activityType"')
-      .eq('"userId"', user.id)
-      .limit(5);
+    // Check when user last synced
+    const { data: lastSyncData } = await supabase
+      .from('users')
+      .select('"lastFarcasterSync"')
+      .eq('id', user.id)
+      .single();
 
-    if (activitiesError) {
-      return NextResponse.json({
-        error: `Activities query error: ${activitiesError.message}`,
-        step: 'activities_lookup'
-      }, { status: 500 });
+    const lastSync = lastSyncData?.lastFarcasterSync;
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // If user synced recently, don't allow frequent syncing
+    if (lastSync) {
+      const lastSyncDate = new Date(lastSync);
+      const timeSinceLastSync = now.getTime() - lastSyncDate.getTime();
+      const hoursAgo = timeSinceLastSync / (1000 * 60 * 60);
+      
+      if (hoursAgo < 1) {
+        return NextResponse.json({
+          success: true,
+          message: `Please wait ${Math.ceil(60 - (timeSinceLastSync / 1000 / 60))} minutes before syncing again.`,
+          activitiesDetected: 0
+        });
+      }
     }
 
-    console.log(`✅ Found ${existingActivities?.length || 0} existing activities`);
+    let totalActivitiesDetected = 0;
+    const detectedActivities = [];
 
-    // Success! Database is working
+    // Simulate finding activities (since external API is problematic)
+    // In a real implementation, this would query Farcaster Hub API
+    const mockActivities = [
+      {
+        type: 'CLAP_REACTION',
+        targetArtistId: artists[0]?.id,
+        targetArtistUsername: artists[0]?.username,
+        castHash: `0x${Math.random().toString(16).substring(2, 10)}`,
+        points: 5
+      }
+    ];
+
+    // Process mock activities (replace with real Farcaster data later)
+    for (const mockActivity of mockActivities) {
+      if (!mockActivity.targetArtistId) continue;
+
+      // Check if we already recorded this activity
+      const { data: existingActivity } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('"userId"', user.id)
+        .eq('"activityType"', mockActivity.type)
+        .eq('"farcasterCastHash"', mockActivity.castHash)
+        .eq('"targetUserId"', mockActivity.targetArtistId)
+        .single();
+
+      if (existingActivity) {
+        console.log(`⚠️ Activity already recorded`);
+        continue;
+      }
+
+      // Award points through existing activities API
+      try {
+        const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            activityType: mockActivity.type,
+            targetUserId: mockActivity.targetArtistId,
+            farcasterCastHash: mockActivity.castHash,
+            metadata: {
+              syncedFromFarcaster: true,
+              simulatedActivity: true, // Mark as simulated for now
+              timestamp: now.toISOString(),
+              targetArtistUsername: mockActivity.targetArtistUsername
+            }
+          })
+        });
+
+        if (activityResponse.ok) {
+          const activityResult = await activityResponse.json();
+          totalActivitiesDetected++;
+          
+          detectedActivities.push({
+            type: mockActivity.type,
+            targetArtist: mockActivity.targetArtistUsername,
+            points: activityResult.pointsAwarded,
+            timestamp: now.toISOString()
+          });
+
+          console.log(`✅ Awarded ${activityResult.pointsAwarded} points for ${mockActivity.type} to ${mockActivity.targetArtistUsername}`);
+        }
+      } catch (error) {
+        console.error(`❌ Error recording activity:`, error);
+      }
+    }
+
+    // Update user's last sync time
+    await supabase
+      .from('users')
+      .update({ '"lastFarcasterSync"': now.toISOString() })
+      .eq('id', user.id);
+
+    console.log(`🎉 Sync complete! Detected ${totalActivitiesDetected} new activities`);
+
     return NextResponse.json({
       success: true,
-      message: `Database test successful! Found user ${user.username} and ${artists?.length || 0} artists.`,
-      activitiesDetected: 0,
-      debug: {
-        userFound: true,
-        username: user.username,
-        artistsCount: artists?.length || 0,
-        existingActivitiesCount: existingActivities?.length || 0,
-        databaseWorking: true
-      }
+      activitiesDetected: totalActivitiesDetected,
+      activities: detectedActivities,
+      message: totalActivitiesDetected > 0 
+        ? `Found ${totalActivitiesDetected} new activities! Points awarded.`
+        : 'No new activities found. Try supporting some artists on Farcaster and sync again later!',
+      note: 'Currently using simulated data. Real Farcaster integration coming soon!'
     });
 
   } catch (error) {
-    console.error('Sync error:', error);
+    console.error('Error in Farcaster sync:', error);
     return NextResponse.json({
-      error: 'Database test failed',
-      details: error instanceof Error ? error.message : String(error)
+      error: 'Failed to sync Farcaster activities'
     }, { status: 500 });
   }
 }

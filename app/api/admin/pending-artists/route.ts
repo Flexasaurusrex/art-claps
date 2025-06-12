@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
@@ -32,20 +31,27 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    const formattedArtists = artists?.map(artist => ({
-      id: artist.id,
-      farcasterFid: artist.farcasterFid,
-      username: artist.username,
-      displayName: artist.displayName || artist.username,
-      pfpUrl: artist.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artist.username}`,
-      bio: artist.bio || '',
-      verificationNotes: artist.verificationNotes || '',
-      createdAt: artist.createdAt,
-      referredBy: artist.referrer ? {
-        username: artist.referrer.username,
-        displayName: artist.referrer.displayName
-      } : null
-    })) || [];
+    const formattedArtists = artists?.map(artist => {
+      // Handle referrer as potentially array or single object
+      const referrerData = Array.isArray(artist.referrer) 
+        ? artist.referrer[0] 
+        : artist.referrer;
+
+      return {
+        id: artist.id,
+        farcasterFid: artist.farcasterFid,
+        username: artist.username,
+        displayName: artist.displayName || artist.username,
+        pfpUrl: artist.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artist.username}`,
+        bio: artist.bio || '',
+        verificationNotes: artist.verificationNotes || '',
+        createdAt: artist.createdAt,
+        referredBy: referrerData ? {
+          username: referrerData.username,
+          displayName: referrerData.displayName
+        } : null
+      };
+    }) || [];
 
     return NextResponse.json({
       success: true,

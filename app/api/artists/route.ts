@@ -34,9 +34,24 @@ export async function GET() {
 
     if (error) throw error;
 
+    // Transform data to match frontend expectations
+    const transformedArtists = artists?.map(artist => ({
+      id: artist.id,
+      fid: artist.farcasterFid, // Map farcasterFid to fid
+      username: artist.username,
+      displayName: artist.displayName,
+      pfpUrl: artist.pfpUrl,
+      bio: artist.bio,
+      verifiedArtist: true, // All returned artists are verified
+      claps: artist.supportReceived || 0, // Map supportReceived to claps
+      totalActivities: artist.totalPoints || 0,
+      connections: Math.floor((artist.supportReceived || 0) * 0.3), // Estimate connections
+      alreadyClappedToday: false // Default to false, will be updated by clap logic
+    })) || [];
+
     return NextResponse.json({
       success: true,
-      artists: artists || []
+      artists: transformedArtists
     });
 
   } catch (error) {

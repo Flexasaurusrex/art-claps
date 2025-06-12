@@ -1,3 +1,4 @@
+// app/admin/page.tsx - FIXED AUTH LOGIC
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -25,24 +26,32 @@ export default function AdminPage() {
   const [pendingArtists, setPendingArtists] = useState<PendingArtist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processing, setProcessing] = useState<{[key: string]: boolean}>({});
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Check if user is admin (you can hardcode your FID here)
   const isAdmin = profile?.fid === 7418; // Replace with your actual FID
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/');
-      return;
-    }
-    
-    if (isAuthenticated && !isAdmin) {
-      router.push('/discover');
-      return;
-    }
+    // Wait a moment for auth to load
+    const timer = setTimeout(() => {
+      setAuthChecked(true);
+      
+      if (!isAuthenticated) {
+        router.push('/');
+        return;
+      }
+      
+      if (isAuthenticated && !isAdmin) {
+        router.push('/discover');
+        return;
+      }
 
-    if (isAdmin) {
-      fetchPendingArtists();
-    }
+      if (isAdmin) {
+        fetchPendingArtists();
+      }
+    }, 1000); // Give auth time to load
+
+    return () => clearTimeout(timer);
   }, [isAuthenticated, isAdmin, router]);
 
   const fetchPendingArtists = async () => {
@@ -57,6 +66,18 @@ export default function AdminPage() {
       console.error('Error fetching pending artists:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleApprovalWithNotes = (artistId: string, approved: boolean) => {
+    const action = approved ? 'approve' : 'reject';
+    const notes = prompt(
+      `${approved ? 'Approve' : 'Reject'} this artist application?\n\nOptional admin notes:`,
+      approved ? 'Welcome to Art Claps!' : 'Please reapply with more details.'
+    );
+    
+    if (notes !== null) { // User didn't cancel
+      handleApproval(artistId, approved, notes);
     }
   };
 
@@ -94,18 +115,24 @@ export default function AdminPage() {
     }
   };
 
-  const handleApprovalWithNotes = (artistId: string, approved: boolean) => {
-    const action = approved ? 'approve' : 'reject';
-    const notes = prompt(
-      `${approved ? 'Approve' : 'Reject'} this artist application?\n\nOptional admin notes:`,
-      approved ? 'Welcome to Art Claps!' : 'Please reapply with more details.'
+  // Show loading while auth loads
+  if (!authChecked || (isLoading && isAuthenticated)) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1.5rem'
+      }}>
+        Loading Admin Panel... 👑
+      </div>
     );
-    
-    if (notes !== null) { // User didn't cancel
-      handleApproval(artistId, approved, notes);
-    }
-  };
+  }
 
+  // Auth check failed
   if (!isAuthenticated || !isAdmin) {
     return (
       <div style={{
@@ -156,17 +183,6 @@ export default function AdminPage() {
             }}
           >
             ← Back to Discover
-          </a>
-          
-          <a 
-            href="/referral-codes"
-            style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              textDecoration: 'none',
-              fontSize: '1rem'
-            }}
-          >
-            🎟️ Referrals
           </a>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

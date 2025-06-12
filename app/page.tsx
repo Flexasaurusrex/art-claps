@@ -41,21 +41,10 @@ export default function HomePage() {
           background: 'rgba(255, 255, 255, 0.2)',
           backdropFilter: 'blur(10px)',
           borderRadius: '50px',
-          padding: '0.75rem 1.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          color: 'white',
-          fontSize: '0.95rem',
-          fontWeight: '500',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease'
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+          padding: '0.5rem',
+          border: '1px solid rgba(255, 255, 255, 0.3)'
         }}>
-          🔐 Sign in
+          <SignInButton />
         </div>
       </header>
 
@@ -76,15 +65,22 @@ export default function HomePage() {
           <h1 style={{
             fontSize: 'clamp(3rem, 8vw, 6rem)',
             fontWeight: '800',
-            color: 'white',
             marginBottom: '2rem',
             lineHeight: '1.1',
             letterSpacing: '-0.02em'
           }}>
-            Support Artists.
+            <span style={{
+              background: 'linear-gradient(90deg, #fff 0%, #fff 40%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'white'
+            }}>
+              Support Artists.
+            </span>
             <br />
             <span style={{
-              background: 'linear-gradient(45deg, #ffd700, #ffed4e)',
+              background: 'linear-gradient(90deg, #ffd700 0%, #ff6b6b 25%, #4ecdc4 50%, #45b7d1 75%, #96ceb4 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'

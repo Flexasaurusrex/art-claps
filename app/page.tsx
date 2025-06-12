@@ -108,10 +108,10 @@ export default function HomePage() {
         {/* Feature Cards Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(2, 1fr)',
           gap: '2rem',
           width: '100%',
-          maxWidth: '1200px',
+          maxWidth: '900px',
           marginBottom: '4rem'
         }}>
           

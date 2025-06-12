@@ -1,8 +1,11 @@
 // app/api/activities/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 
-const prisma = new PrismaClient();
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Points awarded for different activities
 const ACTIVITY_POINTS = {
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate activity type (using string validation instead of enum)
+    // Validate activity type
     const validActivityTypes = [
       'SHARE_ARTIST_WORK',
       'QUALITY_REPLY',
@@ -70,14 +73,14 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate activities (prevent spam)
     if (farcasterCastHash) {
-      const existingActivity = await prisma.activity.findFirst({
-        where: {
-          userId,
-          activityType: activityType as any, // TEMPORARY FIX - using string instead of enum
-          farcasterCastHash,
-          targetUserId
-        }
-      });
+      const { data: existingActivity } = await supabase
+        .from('activities')
+        .select('id')
+        .eq('userId', userId)
+        .eq('activityType', activityType)
+        .eq('farcasterCastHash', farcasterCastHash)
+        .eq('targetUserId', targetUserId)
+        .single();
 
       if (existingActivity) {
         return NextResponse.json(
@@ -91,37 +94,57 @@ export async function POST(request: NextRequest) {
     const pointsEarned = ACTIVITY_POINTS[activityType as keyof typeof ACTIVITY_POINTS] || 0;
 
     // Create the activity record
-    const activity = await prisma.activity.create({
-      data: {
+    const { data: activity, error: activityError } = await supabase
+      .from('activities')
+      .insert({
         userId,
-        activityType: activityType as any, // TEMPORARY FIX - using string instead of enum
+        activityType,
         pointsEarned,
         targetUserId,
         farcasterCastHash,
         metadata,
         processed: true
-      }
-    });
+      })
+      .select()
+      .single();
+
+    if (activityError) throw activityError;
 
     // Update user's point totals
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        totalPoints: { increment: pointsEarned },
-        weeklyPoints: { increment: pointsEarned },
-        monthlyPoints: { increment: pointsEarned },
-        supportGiven: { increment: 1 }
-      }
-    });
+    const { data: user } = await supabase
+      .from('users')
+      .select('totalPoints, weeklyPoints, monthlyPoints, supportGiven')
+      .eq('id', userId)
+      .single();
+
+    if (user) {
+      await supabase
+        .from('users')
+        .update({
+          totalPoints: user.totalPoints + pointsEarned,
+          weeklyPoints: user.weeklyPoints + pointsEarned,
+          monthlyPoints: user.monthlyPoints + pointsEarned,
+          supportGiven: user.supportGiven + 1
+        })
+        .eq('id', userId);
+    }
 
     // If there's a target user, update their support received count
     if (targetUserId) {
-      await prisma.user.update({
-        where: { id: targetUserId },
-        data: {
-          supportReceived: { increment: 1 }
-        }
-      });
+      const { data: targetUser } = await supabase
+        .from('users')
+        .select('supportReceived')
+        .eq('id', targetUserId)
+        .single();
+
+      if (targetUser) {
+        await supabase
+          .from('users')
+          .update({
+            supportReceived: targetUser.supportReceived + 1
+          })
+          .eq('id', targetUserId);
+      }
 
       // Update artist connection
       await updateArtistConnection(userId, targetUserId);
@@ -161,34 +184,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const activities = await prisma.activity.findMany({
-      where: { userId },
-      include: {
-        targetUser: {
-          select: {
-            username: true,
-            displayName: true,
-            pfpUrl: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset
-    });
+    const { data: activities, error, count } = await supabase
+      .from('activities')
+      .select(`
+        *,
+        targetUser:users!activities_targetUserId_fkey(
+          username,
+          displayName,
+          pfpUrl
+        )
+      `, { count: 'exact' })
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const totalActivities = await prisma.activity.count({
-      where: { userId }
-    });
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      activities,
+      activities: activities || [],
       pagination: {
-        total: totalActivities,
+        total: count || 0,
         limit,
         offset,
-        hasMore: offset + limit < totalActivities
+        hasMore: (offset + limit) < (count || 0)
       }
     });
 
@@ -204,44 +223,35 @@ export async function GET(request: NextRequest) {
 // Helper function to update artist connections
 async function updateArtistConnection(fromUserId: string, toUserId: string) {
   try {
-    const existingConnection = await prisma.artistConnection.findUnique({
-      where: {
-        fromUserId_toUserId: {
-          fromUserId,
-          toUserId
-        }
-      }
-    });
+    const { data: existingConnection } = await supabase
+      .from('artist_connections')
+      .select('*')
+      .eq('fromUserId', fromUserId)
+      .eq('toUserId', toUserId)
+      .single();
 
     if (existingConnection) {
-      // Update existing connection
-      await prisma.artistConnection.update({
-        where: {
-          fromUserId_toUserId: {
-            fromUserId,
-            toUserId
-          }
-        },
-        data: {
-          interactionCount: { increment: 1 },
-          lastInteraction: new Date(),
-          relationshipStrength: { increment: 0.1 }
-        }
-      });
+      await supabase
+        .from('artist_connections')
+        .update({
+          interactionCount: existingConnection.interactionCount + 1,
+          lastInteraction: new Date().toISOString(),
+          relationshipStrength: existingConnection.relationshipStrength + 0.1
+        })
+        .eq('fromUserId', fromUserId)
+        .eq('toUserId', toUserId);
     } else {
-      // Create new connection
-      await prisma.artistConnection.create({
-        data: {
+      await supabase
+        .from('artist_connections')
+        .insert({
           fromUserId,
           toUserId,
           interactionCount: 1,
-          lastInteraction: new Date(),
+          lastInteraction: new Date().toISOString(),
           relationshipStrength: 1.0
-        }
-      });
+        });
     }
   } catch (error) {
     console.error('Error updating artist connection:', error);
-    // Don't throw - connection updates shouldn't fail the main activity
   }
 }

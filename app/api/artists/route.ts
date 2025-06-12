@@ -4,80 +4,39 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const currentUserFid = searchParams.get('currentUserFid');
+// Helper function to safely extract data from Supabase foreign key relationships
+function extractRelationshipData<T>(data: T | T[] | null): T | null {
+  if (!data) return null;
+  return Array.isArray(data) ? data[0] : data;
+}
 
-    // ONLY show verified artists in discovery
-    const { data: artists, error, count } = await supabase
+// GET - Return all verified artists for discovery page
+export async function GET() {
+  try {
+    const { data: artists, error } = await supabase
       .from('users')
-      .select('*', { count: 'exact' })
-      .eq('artistStatus', 'verified_artist') // ONLY verified artists
-      .order('supportReceived', { ascending: false })
-      .order('totalPoints', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .select(`
+        id,
+        username,
+        displayName,
+        pfpUrl,
+        bio,
+        totalPoints,
+        weeklyPoints,
+        monthlyPoints,
+        supportReceived,
+        createdAt
+      `)
+      .eq('artistStatus', 'verified_artist')
+      .order('weeklyPoints', { ascending: false });
 
     if (error) throw error;
 
-    // Check which artists the current user has clapped for today
-    let todaysClaps: string[] = [];
-    if (currentUserFid) {
-      const { data: currentUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('farcasterFid', parseInt(currentUserFid))
-        .single();
-
-      if (currentUser) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const { data: claps } = await supabase
-          .from('activities')
-          .select('targetUserId')
-          .eq('userId', currentUser.id)
-          .eq('activityType', 'CLAP_REACTION')
-          .gte('createdAt', today.toISOString())
-          .lt('createdAt', tomorrow.toISOString());
-
-        todaysClaps = claps?.map(clap => clap.targetUserId).filter(Boolean) || [];
-      }
-    }
-
-    // Format the response
-    const formattedArtists = artists?.map(artist => ({
-      id: artist.id,
-      fid: artist.farcasterFid,
-      username: artist.username,
-      displayName: artist.displayName || artist.username,
-      pfpUrl: artist.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artist.username}`,
-      bio: artist.bio || `Verified artist on Farcaster • @${artist.username}`,
-      verifiedArtist: true, // All results are verified artists
-      claps: artist.supportReceived,
-      totalActivities: 0,
-      connections: 0,
-      joinedAt: artist.createdAt,
-      alreadyClappedToday: todaysClaps.includes(artist.id),
-      artistStatus: artist.artistStatus
-    })) || [];
-
     return NextResponse.json({
       success: true,
-      artists: formattedArtists,
-      pagination: {
-        total: count || 0,
-        limit,
-        offset,
-        hasMore: (offset + limit) < (count || 0)
-      }
+      artists: artists || []
     });
 
   } catch (error) {
@@ -89,16 +48,16 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Updated POST to handle artist applications
+// POST - Handle artist application
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      farcasterFid, 
-      username, 
-      displayName, 
-      pfpUrl, 
-      bio, 
+    const {
+      farcasterFid,
+      username,
+      displayName,
+      pfpUrl,
+      bio,
       portfolioUrl,
       referralCode,
       applicationMessage
@@ -111,113 +70,196 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user exists
-    const { data: existingUser } = await supabase
+    // Check if user already exists
+    const { data: existingUser, error: userCheckError } = await supabase
       .from('users')
-      .select('*')
+      .select('id, artistStatus')
       .eq('farcasterFid', parseInt(farcasterFid))
       .single();
 
-    let artistStatus = 'supporter'; // Default for new users
-    let referredBy = null;
+    if (userCheckError && userCheckError.code !== 'PGRST116') {
+      throw userCheckError;
+    }
 
-    // Check referral code if provided
-    if (referralCode) {
-      const { data: validCode } = await supabase
-        .from('referral_codes')
-        .select('*')
-        .eq('code', referralCode)
-        .eq('used', false)
-        .single();
-
-      if (validCode) {
-        artistStatus = 'verified_artist'; // Auto-verify with valid referral
-        referredBy = validCode.createdBy;
-        
-        // Mark referral code as used
-        await supabase
-          .from('referral_codes')
-          .update({ 
-            used: true, 
-            usedBy: existingUser?.id || 'pending'
-          })
-          .eq('code', referralCode);
-      } else {
+    if (existingUser) {
+      if (existingUser.artistStatus === 'verified_artist') {
         return NextResponse.json(
-          { error: 'Invalid or expired referral code' },
+          { error: 'You are already a verified artist!' },
           { status: 400 }
         );
       }
-    } else if (applicationMessage) {
-      // Manual application - needs approval
-      artistStatus = 'pending_artist';
+      
+      if (existingUser.artistStatus === 'pending_artist') {
+        return NextResponse.json(
+          { error: 'Your application is already under review' },
+          { status: 400 }
+        );
+      }
     }
 
+    let referrerId = null;
+    let isInstantVerification = false;
+
+    // Check referral code if provided
+    if (referralCode) {
+      const { data: referralData, error: referralError } = await supabase
+        .from('referral_codes')
+        .select(`
+          id,
+          createdBy,
+          used,
+          expiresAt,
+          creator:users!referral_codes_createdBy_fkey(
+            id,
+            username,
+            artistStatus
+          )
+        `)
+        .eq('code', referralCode.toUpperCase())
+        .single();
+
+      if (referralError || !referralData) {
+        return NextResponse.json(
+          { error: 'Invalid referral code' },
+          { status: 400 }
+        );
+      }
+
+      if (referralData.used) {
+        return NextResponse.json(
+          { error: 'This referral code has already been used' },
+          { status: 400 }
+        );
+      }
+
+      if (new Date(referralData.expiresAt) < new Date()) {
+        return NextResponse.json(
+          { error: 'This referral code has expired' },
+          { status: 400 }
+        );
+      }
+
+      // Safely extract creator data
+      const creatorData = extractRelationshipData(referralData.creator);
+      
+      if (!creatorData || creatorData.artistStatus !== 'verified_artist') {
+        return NextResponse.json(
+          { error: 'Invalid referral code - creator not verified' },
+          { status: 400 }
+        );
+      }
+
+      referrerId = referralData.createdBy;
+      isInstantVerification = true;
+    }
+
+    // Determine artist status
+    const artistStatus = isInstantVerification ? 'verified_artist' : 'pending_artist';
+
+    // Create or update user
     const userData = {
       farcasterFid: parseInt(farcasterFid),
       username,
       displayName: displayName || username,
-      pfpUrl,
-      bio,
+      pfpUrl: pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+      bio: bio || '',
       artistStatus,
-      referredBy,
-      verificationNotes: applicationMessage || `Applied via ${referralCode ? 'referral' : 'manual application'}`,
+      verificationNotes: applicationMessage || 'Applied via referral code',
+      referredBy: referrerId,
+      totalPoints: 0,
+      weeklyPoints: 0,
+      monthlyPoints: 0,
+      supportGiven: 0,
+      supportReceived: 0,
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     let user;
+
     if (existingUser) {
       // Update existing user
-      const { data, error } = await supabase
+      const { data: updatedUser, error: updateError } = await supabase
         .from('users')
         .update(userData)
-        .eq('farcasterFid', parseInt(farcasterFid))
+        .eq('id', existingUser.id)
         .select()
         .single();
 
-      if (error) throw error;
-      user = data;
+      if (updateError) throw updateError;
+      user = updatedUser;
     } else {
       // Create new user
-      const { data, error } = await supabase
+      const { data: newUser, error: createError } = await supabase
         .from('users')
         .insert({
-          ...userData,
-          totalPoints: 0,
-          weeklyPoints: 0,
-          monthlyPoints: 0,
-          supportGiven: 0,
-          supportReceived: 0
+          id: `user_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          ...userData
         })
         .select()
         .single();
 
-      if (error) throw error;
-      user = data;
+      if (createError) throw createError;
+      user = newUser;
     }
 
-    const message = artistStatus === 'verified_artist' 
-      ? 'Welcome! You are now a verified artist.' 
-      : artistStatus === 'pending_artist'
-      ? 'Application submitted! Awaiting approval.'
-      : 'Account updated successfully.';
+    // Mark referral code as used if instant verification
+    if (isInstantVerification && referralCode) {
+      const { error: referralUpdateError } = await supabase
+        .from('referral_codes')
+        .update({
+          used: true,
+          usedBy: user.id,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('code', referralCode.toUpperCase());
+
+      if (referralUpdateError) {
+        console.error('Error marking referral code as used:', referralUpdateError);
+        // Don't fail the whole request for this
+      }
+
+      // Log the referral activity
+      const { error: activityError } = await supabase
+        .from('activities')
+        .insert({
+          id: `activity_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+          userId: user.id,
+          activityType: 'ARTIST_DISCOVERY',
+          pointsEarned: 0,
+          targetUserId: referrerId,
+          metadata: {
+            referralCode: referralCode,
+            instantVerification: true
+          },
+          processed: true,
+          createdAt: new Date().toISOString()
+        });
+
+      if (activityError) {
+        console.error('Error logging referral activity:', activityError);
+      }
+    }
+
+    // Return success response
+    const message = isInstantVerification
+      ? `🎉 Welcome to Art Claps! You've been instantly verified and can now receive claps from supporters. Start sharing your art!`
+      : `✨ Application submitted successfully! We'll review your application and get back to you soon. Thank you for wanting to join our community!`;
 
     return NextResponse.json({
       success: true,
       message,
       user: {
         id: user.id,
-        fid: user.farcasterFid,
-        username: user.username,
-        displayName: user.displayName,
-        artistStatus: user.artistStatus
+        artistStatus: user.artistStatus,
+        instantVerification: isInstantVerification
       }
     });
 
   } catch (error) {
-    console.error('Error creating/updating artist:', error);
+    console.error('Error processing artist application:', error);
     return NextResponse.json(
-      { error: 'Failed to process artist application' },
+      { error: 'Failed to process application' },
       { status: 500 }
     );
   }

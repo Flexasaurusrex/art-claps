@@ -60,17 +60,18 @@ export default function AdminPage() {
     }
   };
 
-  const handleApproval = async (artistId: string, approved: boolean) => {
+  const handleApproval = async (artistId: string, approved: boolean, adminNotes?: string) => {
     setProcessing(prev => ({ ...prev, [artistId]: true }));
 
     try {
-      const response = await fetch('/api/admin/approve-artist', {
+      // Fixed API endpoint to match our built API
+      const response = await fetch('/api/admin/pending-artists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           artistId,
-          approved,
-          adminFid: profile?.fid
+          action: approved ? 'approve' : 'reject',
+          adminNotes: adminNotes || (approved ? 'Approved via admin dashboard' : 'Rejected via admin dashboard')
         })
       });
 
@@ -79,6 +80,9 @@ export default function AdminPage() {
       if (data.success) {
         // Remove the artist from pending list
         setPendingArtists(prev => prev.filter(artist => artist.id !== artistId));
+        
+        // Show success message
+        alert(data.message || `Artist ${approved ? 'approved' : 'rejected'} successfully!`);
       } else {
         alert(data.error || 'Failed to process approval');
       }
@@ -87,6 +91,18 @@ export default function AdminPage() {
       alert('Failed to process approval');
     } finally {
       setProcessing(prev => ({ ...prev, [artistId]: false }));
+    }
+  };
+
+  const handleApprovalWithNotes = (artistId: string, approved: boolean) => {
+    const action = approved ? 'approve' : 'reject';
+    const notes = prompt(
+      `${approved ? 'Approve' : 'Reject'} this artist application?\n\nOptional admin notes:`,
+      approved ? 'Welcome to Art Claps!' : 'Please reapply with more details.'
+    );
+    
+    if (notes !== null) { // User didn't cancel
+      handleApproval(artistId, approved, notes);
     }
   };
 
@@ -140,6 +156,17 @@ export default function AdminPage() {
             }}
           >
             ← Back to Discover
+          </a>
+          
+          <a 
+            href="/referral-codes"
+            style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              textDecoration: 'none',
+              fontSize: '1rem'
+            }}
+          >
+            🎟️ Referrals
           </a>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -313,7 +340,7 @@ export default function AdminPage() {
                           fontSize: '0.9rem',
                           color: 'rgb(34, 197, 94)'
                         }}>
-                          Referred by @{artist.referredBy.username}
+                          ✅ Referred by @{artist.referredBy.username}
                         </div>
                       )}
                     </div>
@@ -371,7 +398,7 @@ export default function AdminPage() {
                       gap: '1rem'
                     }}>
                       <button
-                        onClick={() => handleApproval(artist.id, true)}
+                        onClick={() => handleApprovalWithNotes(artist.id, true)}
                         disabled={processing[artist.id]}
                         style={{
                           background: processing[artist.id] 
@@ -391,7 +418,7 @@ export default function AdminPage() {
                       </button>
                       
                       <button
-                        onClick={() => handleApproval(artist.id, false)}
+                        onClick={() => handleApprovalWithNotes(artist.id, false)}
                         disabled={processing[artist.id]}
                         style={{
                           background: processing[artist.id] 

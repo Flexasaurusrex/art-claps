@@ -1,118 +1,408 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useProfile } from '@farcaster/auth-kit';
-import { useRouter } from 'next/navigation';
 
-interface ReferralCode {
+interface Artist {
   id: string;
-  code: string;
-  used: boolean;
-  usedBy?: {
-    username: string;
-    displayName: string;
-  };
-  createdAt: string;
+  fid: number;
+  username: string;
+  displayName: string;
+  pfpUrl: string;
+  bio: string;
+  verifiedArtist: boolean;
+  claps: number;
+  totalActivities: number;
+  connections: number;
+  alreadyClappedToday: boolean;
 }
 
-interface UserData {
-  artistStatus: string;
-  totalCodes: number;
-  usedCodes: number;
+interface UserStats {
+  totalPoints: number;
+  weeklyPoints: number;
+  monthlyPoints: number;
+  supportGiven: number;
+  supportReceived: number;
 }
 
-export default function ReferralPage() {
+export default function DiscoverPage() {
   const { isAuthenticated, profile } = useProfile();
-  const router = useRouter();
-  const [referralCodes, setReferralCodes] = useState<ReferralCode[]>([]);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState<{[key: number]: boolean}>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [userRole, setUserRole] = useState<'supporter' | 'verified_artist' | 'admin'>('supporter');
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Check if user is admin (FID 7418)
+  const isAdmin = profile?.fid === 7418;
+
+  // Close dropdown when clicking outside
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/');
-      return;
-    }
-    
-    if (isAuthenticated && profile) {
-      fetchReferralData();
-    }
-  }, [isAuthenticated, profile, router]);
-
-  const fetchReferralData = async () => {
-    try {
-      const response = await fetch(`/api/referrals?fid=${profile?.fid}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setReferralCodes(data.codes);
-        setUserData(data.user);
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
       }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Initialize user and fetch data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && profile) {
+      initializeUser();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, profile]);
+
+  const initializeUser = async () => {
+    try {
+      // Register/update user in database
+      await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          farcasterFid: profile.fid,
+          username: profile.username,
+          displayName: profile.displayName,
+          pfpUrl: profile.pfpUrl,
+          bio: profile.bio
+        })
+      });
+
+      // Fetch user stats and determine role
+      await fetchUserStats();
+      
+      // Fetch artists
+      await fetchArtists();
+      
     } catch (error) {
-      console.error('Error fetching referral data:', error);
+      console.error('Error initializing user:', error);
+      setError('Failed to initialize user data');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const generateNewCode = async () => {
-    setIsGenerating(true);
+  const fetchUserStats = async () => {
+    try {
+      const response = await fetch(`/api/user?fid=${profile.fid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUserStats({
+          totalPoints: data.user.totalPoints,
+          weeklyPoints: data.user.weeklyPoints,
+          monthlyPoints: data.user.monthlyPoints,
+          supportGiven: data.user.supportGiven,
+          supportReceived: data.user.supportReceived
+        });
+
+        // Determine user role
+        if (isAdmin) {
+          setUserRole('admin');
+        } else if (data.user.artistStatus === 'verified_artist') {
+          setUserRole('verified_artist');
+        } else {
+          setUserRole('supporter');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const fetchArtists = async () => {
+    try {
+      const response = await fetch(`/api/artists?limit=20&currentUserFid=${profile.fid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setArtists(data.artists);
+      } else {
+        setError('Failed to fetch artists');
+      }
+    } catch (error) {
+      console.error('Error fetching artists:', error);
+      setError('Failed to fetch artists');
+    }
+  };
+
+  const handleClap = async (artistFid: number) => {
+    if (!isAuthenticated || !profile) return;
+    
+    setLoading(prev => ({ ...prev, [artistFid]: true }));
     
     try {
-      const response = await fetch('/api/referrals/generate', {
+      const response = await fetch('/api/clap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userFid: profile?.fid
+          userFid: profile.fid,
+          targetFid: artistFid
         })
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setReferralCodes(prev => [data.code, ...prev]);
-        setUserData(prev => prev ? {
-          ...prev,
-          totalCodes: prev.totalCodes + 1
-        } : null);
+        // Update local artist state
+        setArtists(prev => prev.map(artist => 
+          artist.fid === artistFid 
+            ? { 
+                ...artist, 
+                claps: artist.claps + 1,
+                alreadyClappedToday: true 
+              }
+            : artist
+        ));
+
+        // Update user stats
+        if (userStats) {
+          setUserStats(prev => prev ? {
+            ...prev,
+            totalPoints: data.newTotalPoints,
+            weeklyPoints: prev.weeklyPoints + 5,
+            monthlyPoints: prev.monthlyPoints + 5,
+            supportGiven: prev.supportGiven + 1
+          } : null);
+        }
+
       } else {
-        alert(data.error || 'Failed to generate code');
+        alert(data.error || 'Failed to record clap');
       }
     } catch (error) {
-      console.error('Error generating code:', error);
-      alert('Failed to generate code');
+      console.error('Error clapping:', error);
+      alert('Failed to record clap. Please try again.');
     } finally {
-      setIsGenerating(false);
+      setLoading(prev => ({ ...prev, [artistFid]: false }));
     }
   };
 
-  const copyToClipboard = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopiedCode(code);
-      setTimeout(() => setCopiedCode(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
+  const ProfileDropdown = () => (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'absolute',
+        top: '100%',
+        right: '0',
+        marginTop: '0.5rem',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '16px',
+        padding: '1rem',
+        minWidth: '200px',
+        zIndex: 50
+      }}
+    >
+      {/* User Info Header */}
+      <div style={{
+        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        paddingBottom: '1rem',
+        marginBottom: '1rem'
+      }}>
+        <div style={{
+          color: 'white',
+          fontWeight: '600',
+          marginBottom: '0.25rem'
+        }}>
+          {profile?.displayName}
+        </div>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          fontSize: '0.9rem',
+          marginBottom: '0.5rem'
+        }}>
+          @{profile?.username}
+        </div>
+        <div style={{
+          display: 'inline-block',
+          background: userRole === 'admin' 
+            ? 'rgba(239, 68, 68, 0.2)' 
+            : userRole === 'verified_artist'
+            ? 'rgba(34, 197, 94, 0.2)'
+            : 'rgba(59, 130, 246, 0.2)',
+          border: `1px solid ${userRole === 'admin' 
+            ? 'rgba(239, 68, 68, 0.5)' 
+            : userRole === 'verified_artist'
+            ? 'rgba(34, 197, 94, 0.5)'
+            : 'rgba(59, 130, 246, 0.5)'}`,
+          borderRadius: '12px',
+          padding: '0.25rem 0.75rem',
+          fontSize: '0.8rem',
+          color: userRole === 'admin' 
+            ? 'rgb(239, 68, 68)' 
+            : userRole === 'verified_artist'
+            ? 'rgb(34, 197, 94)'
+            : 'rgb(59, 130, 246)',
+          fontWeight: '600'
+        }}>
+          {userRole === 'admin' ? '👑 Admin' : 
+           userRole === 'verified_artist' ? '✓ Verified Artist' : 
+           '💎 Supporter'}
+        </div>
+      </div>
 
-  const shareCode = (code: string) => {
-    const shareText = `🎨 Join Art Claps as a verified artist!\n\nUse my referral code: ${code}\n\nApply at: https://art-claps.vercel.app/apply\n\n#FarcasterArt #ArtClaps`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: 'Art Claps Artist Referral',
-        text: shareText
-      });
-    } else {
-      copyToClipboard(shareText);
-      alert('Referral message copied to clipboard!');
-    }
-  };
+      {/* Navigation Links */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        
+        {/* Admin Panel - Only for admins */}
+        {userRole === 'admin' && (
+          <a
+            href="/admin"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: 'white',
+              textDecoration: 'none',
+              padding: '0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.2s ease',
+              fontSize: '0.95rem'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <span>👑</span>
+            <span>Admin Panel</span>
+          </a>
+        )}
 
-  if (!isAuthenticated || !profile) {
+        {/* Referral Codes - For verified artists and admins */}
+        {(userRole === 'verified_artist' || userRole === 'admin') && (
+          <a
+            href="/referral-codes"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: 'white',
+              textDecoration: 'none',
+              padding: '0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.2s ease',
+              fontSize: '0.95rem'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <span>🎟️</span>
+            <span>My Referral Codes</span>
+          </a>
+        )}
+
+        {/* Apply to be Artist - Only for supporters */}
+        {userRole === 'supporter' && (
+          <a
+            href="/apply"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textDecoration: 'none',
+              padding: '0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.2s ease',
+              fontSize: '0.95rem'
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              alert('🚧 Apply page needs auth fix - coming soon!');
+            }}
+          >
+            <span>🎨</span>
+            <span>Apply to be Artist</span>
+            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(Soon)</span>
+          </a>
+        )}
+
+        <div style={{
+          height: '1px',
+          background: 'rgba(255, 255, 255, 0.2)',
+          margin: '0.5rem 0'
+        }} />
+
+        {/* Home */}
+        <a
+          href="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            transition: 'background 0.2s ease',
+            fontSize: '0.95rem'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <span>🏠</span>
+          <span>Home</span>
+        </a>
+
+        {/* Sign Out */}
+        <button
+          onClick={() => {
+            // Add sign out logic here if needed
+            window.location.href = '/';
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.8)',
+            background: 'transparent',
+            border: 'none',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            transition: 'background 0.2s ease',
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <span>🚪</span>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  // Loading state
+  if (isLoading) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -123,12 +413,13 @@ export default function ReferralPage() {
         color: 'white',
         fontSize: '1.5rem'
       }}>
-        Loading...
+        Loading Art Claps... 🎨
       </div>
     );
   }
 
-  if (!isLoading && userData?.artistStatus !== 'verified_artist') {
+  // Not authenticated state
+  if (!isAuthenticated || !profile) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -138,30 +429,25 @@ export default function ReferralPage() {
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
+        fontSize: '1.5rem',
         textAlign: 'center',
         padding: '2rem'
       }}>
-        <div style={{ fontSize: '4rem', marginBottom: '2rem' }}>🔒</div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-          Verified Artists Only
-        </h1>
-        <p style={{ fontSize: '1.2rem', marginBottom: '2rem', opacity: 0.8 }}>
-          You need to be a verified artist to access referral codes.
-        </p>
+        <div style={{ marginBottom: '2rem' }}>🔐</div>
+        <div style={{ marginBottom: '2rem' }}>Please sign in to discover artists</div>
         <a 
-          href="/apply"
+          href="/"
           style={{
-            background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
+            background: 'rgba(255, 255, 255, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
             borderRadius: '12px',
             padding: '1rem 2rem',
             color: 'white',
             textDecoration: 'none',
-            fontSize: '1rem',
-            fontWeight: '600'
+            fontSize: '1rem'
           }}
         >
-          Apply to Become Artist
+          ← Back to Sign In
         </a>
       </div>
     );
@@ -173,7 +459,7 @@ export default function ReferralPage() {
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      {/* Header */}
+      {/* Header with User Stats */}
       <header style={{
         padding: '2rem',
         display: 'flex',
@@ -191,32 +477,89 @@ export default function ReferralPage() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <a 
-            href="/discover"
-            style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              textDecoration: 'none',
-              fontSize: '1rem'
-            }}
-          >
-            ← Back to Discover
-          </a>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <img 
-              src={profile.pfpUrl} 
-              alt={profile.displayName}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: '2px solid rgba(255, 255, 255, 0.3)'
-              }}
-            />
-            <div style={{ color: 'white' }}>
-              <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Verified Artist</div>
+          {/* User Stats Display */}
+          {userStats && (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1rem',
+              display: 'flex',
+              gap: '1rem',
+              alignItems: 'center'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>
+                  {userStats.totalPoints.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                  Total CLAPS
+                </div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>
+                  {userStats.weeklyPoints}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                  This Week
+                </div>
+              </div>
             </div>
+          )}
+          
+          {/* User Profile with Dropdown */}
+          <div style={{ position: 'relative' }}>
+            <div 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '1rem',
+                cursor: 'pointer',
+                padding: '0.5rem',
+                borderRadius: '12px',
+                transition: 'background 0.2s ease'
+              }}
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseOut={(e) => {
+                if (!showProfileDropdown) {
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
+              <img 
+                src={profile.pfpUrl} 
+                alt={profile.displayName}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  border: '2px solid rgba(255, 255, 255, 0.3)'
+                }}
+              />
+              <div style={{ color: 'white' }}>
+                <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
+              </div>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.7)"
+                strokeWidth="2"
+                style={{
+                  transform: showProfileDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease'
+                }}
+              >
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
+            </div>
+
+            {/* Dropdown Menu */}
+            {showProfileDropdown && <ProfileDropdown />}
           </div>
         </div>
       </header>
@@ -224,285 +567,210 @@ export default function ReferralPage() {
       {/* Main Content */}
       <main style={{ padding: '0 2rem 4rem 2rem' }}>
         <div style={{
-          maxWidth: '800px',
+          maxWidth: '1200px',
           margin: '0 auto'
         }}>
-          
-          {/* Header Section */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '24px',
-            padding: '3rem 2rem',
-            textAlign: 'center',
-            marginBottom: '2rem'
+          <h1 style={{
+            fontSize: '3rem',
+            fontWeight: '800',
+            color: 'white',
+            marginBottom: '1rem',
+            textAlign: 'center'
           }}>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: '800',
+            🎨 Discover Artists
+          </h1>
+          
+          <p style={{
+            fontSize: '1.2rem',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textAlign: 'center',
+            marginBottom: '3rem',
+            maxWidth: '600px',
+            margin: '0 auto 3rem auto'
+          }}>
+            Support amazing Farcaster artists and earn CLAPS points for genuine engagement
+          </p>
+
+          {/* Error Display */}
+          {error && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '12px',
+              padding: '1rem',
               color: 'white',
-              marginBottom: '1rem'
-            }}>
-              🎟️ Artist Referrals
-            </h1>
-            
-            <p style={{
-              fontSize: '1.2rem',
-              color: 'rgba(255, 255, 255, 0.8)',
-              marginBottom: '2rem',
-              lineHeight: '1.6'
-            }}>
-              Invite fellow artists to join Art Claps! Each referral code instantly verifies new artists.
-            </p>
-
-            {userData && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '3rem',
-                marginBottom: '2rem'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    fontSize: '2rem',
-                    fontWeight: '700',
-                    color: '#ffd700'
-                  }}>
-                    {userData.totalCodes - userData.usedCodes}
-                  </div>
-                  <div style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: '1rem'
-                  }}>
-                    Available Codes
-                  </div>
-                </div>
-                
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    fontSize: '2rem',
-                    fontWeight: '700',
-                    color: '#22c55e'
-                  }}>
-                    {userData.usedCodes}
-                  </div>
-                  <div style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: '1rem'
-                  }}>
-                    Artists Invited
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={generateNewCode}
-              disabled={isGenerating}
-              style={{
-                background: isGenerating 
-                  ? 'rgba(255, 255, 255, 0.3)' 
-                  : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '1rem 2rem',
-                color: 'white',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                cursor: isGenerating ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {isGenerating ? '⏳ Generating...' : '✨ Generate New Code'}
-            </button>
-          </div>
-
-          {/* Referral Codes List */}
-          {isLoading ? (
-            <div style={{
               textAlign: 'center',
-              color: 'white',
-              fontSize: '1.2rem',
-              padding: '2rem'
+              marginBottom: '2rem'
             }}>
-              Loading your referral codes... 🎨
-            </div>
-          ) : referralCodes.length === 0 ? (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '3rem',
-              textAlign: 'center',
-              color: 'white'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎫</div>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>No referral codes yet</h2>
-              <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                Generate your first code to start inviting fellow artists!
-              </p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gap: '1rem'
-            }}>
-              {referralCodes.map((referral) => (
-                <div
-                  key={referral.id}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(20px)',
-                    border: `1px solid ${referral.used ? 'rgba(34, 197, 94, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                    borderRadius: '16px',
-                    padding: '1.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      marginBottom: referral.used ? '0.5rem' : '0'
-                    }}>
-                      <code style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '8px',
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        color: 'white',
-                        fontFamily: 'monospace'
-                      }}>
-                        {referral.code}
-                      </code>
-                      
-                      {referral.used ? (
-                        <div style={{
-                          background: 'rgba(34, 197, 94, 0.2)',
-                          border: '1px solid rgba(34, 197, 94, 0.5)',
-                          borderRadius: '20px',
-                          padding: '0.25rem 0.75rem',
-                          fontSize: '0.8rem',
-                          color: 'rgb(34, 197, 94)',
-                          fontWeight: '600'
-                        }}>
-                          ✓ Used
-                        </div>
-                      ) : (
-                        <div style={{
-                          background: 'rgba(255, 193, 7, 0.2)',
-                          border: '1px solid rgba(255, 193, 7, 0.5)',
-                          borderRadius: '20px',
-                          padding: '0.25rem 0.75rem',
-                          fontSize: '0.8rem',
-                          color: 'rgb(255, 193, 7)',
-                          fontWeight: '600'
-                        }}>
-                          Available
-                        </div>
-                      )}
-                    </div>
-                    
-                    {referral.used && referral.usedBy && (
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '0.9rem'
-                      }}>
-                        Used by @{referral.usedBy.username} ({referral.usedBy.displayName})
-                      </div>
-                    )}
-                  </div>
-
-                  {!referral.used && (
-                    <div style={{
-                      display: 'flex',
-                      gap: '0.5rem'
-                    }}>
-                      <button
-                        onClick={() => copyToClipboard(referral.code)}
-                        style={{
-                          background: copiedCode === referral.code 
-                            ? 'rgba(34, 197, 94, 0.3)' 
-                            : 'rgba(255, 255, 255, 0.2)',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.5rem 1rem',
-                          color: 'white',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        {copiedCode === referral.code ? '✓ Copied' : '📋 Copy'}
-                      </button>
-                      
-                      <button
-                        onClick={() => shareCode(referral.code)}
-                        style={{
-                          background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.5rem 1rem',
-                          color: 'white',
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        🚀 Share
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+              {error}
             </div>
           )}
 
-          {/* How It Works */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '16px',
-            padding: '2rem',
-            marginTop: '2rem'
-          }}>
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.3rem',
-              fontWeight: '700',
-              marginBottom: '1rem'
-            }}>
-              💡 How Referrals Work
-            </h3>
-            
+          {/* Artists Grid */}
+          {artists.length > 0 ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.9rem'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+              gap: '2rem'
             }}>
-              <div>
-                <strong style={{ color: 'white' }}>1. Share Code</strong><br />
-                Send your referral code to artist friends
-              </div>
-              <div>
-                <strong style={{ color: 'white' }}>2. Instant Verification</strong><br />
-                They get verified immediately when applying
-              </div>
-              <div>
-                <strong style={{ color: 'white' }}>3. Build Community</strong><br />
-                Help grow the verified artist network
-              </div>
+              {artists.map((artist) => (
+                <div
+                  key={artist.fid}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(20px)',
+                    border: artist.verifiedArtist 
+                      ? '2px solid rgba(34, 197, 94, 0.5)' 
+                      : '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '20px',
+                    padding: '2rem',
+                    transition: 'transform 0.3s ease',
+                    position: 'relative'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {/* Verified Badge */}
+                  {artist.verifiedArtist && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '1rem',
+                      right: '1rem',
+                      background: 'rgba(34, 197, 94, 0.2)',
+                      border: '1px solid rgba(34, 197, 94, 0.5)',
+                      borderRadius: '20px',
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.8rem',
+                      color: 'rgb(34, 197, 94)',
+                      fontWeight: '600'
+                    }}>
+                      ✓ Verified Artist
+                    </div>
+                  )}
+
+                  {/* Artist Header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <img
+                      src={artist.pfpUrl}
+                      alt={artist.displayName}
+                      style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        border: '3px solid rgba(255, 255, 255, 0.3)'
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{
+                        color: 'white',
+                        fontSize: '1.3rem',
+                        fontWeight: '700',
+                        marginBottom: '0.25rem'
+                      }}>
+                        {artist.displayName}
+                      </h3>
+                      <p style={{
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '1rem'
+                      }}>
+                        @{artist.username}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  <p style={{
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    lineHeight: '1.5',
+                    marginBottom: '1.5rem'
+                  }}>
+                    {artist.bio}
+                  </p>
+
+                  {/* Stats */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '2rem',
+                    marginBottom: '1.5rem'
+                  }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        color: 'white',
+                        fontSize: '1.2rem',
+                        fontWeight: '700'
+                      }}>
+                        {artist.claps.toLocaleString()}
+                      </div>
+                      <div style={{
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontSize: '0.9rem'
+                      }}>
+                        Claps
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        color: 'white',
+                        fontSize: '1.2rem',
+                        fontWeight: '700'
+                      }}>
+                        {artist.connections}
+                      </div>
+                      <div style={{
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontSize: '0.9rem'
+                      }}>
+                        Connections
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Clap Button */}
+                  <button
+                    onClick={() => handleClap(artist.fid)}
+                    disabled={loading[artist.fid] || artist.alreadyClappedToday}
+                    style={{
+                      width: '100%',
+                      background: artist.alreadyClappedToday
+                        ? 'rgba(34, 197, 94, 0.3)' 
+                        : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '1rem',
+                      color: 'white',
+                      fontSize: '1.1rem',
+                      fontWeight: '600',
+                      cursor: loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer',
+                      opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1,
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {loading[artist.fid] ? '👏 Clapping...' : 
+                     artist.alreadyClappedToday ? '✅ Clapped Today!' : 
+                     '👏 Clap for Artist (+5 CLAPS)'}
+                  </button>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div style={{
+              textAlign: 'center',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '1.2rem',
+              padding: '4rem 2rem'
+            }}>
+              No artists found. Check back soon!
+            </div>
+          )}
         </div>
       </main>
     </div>

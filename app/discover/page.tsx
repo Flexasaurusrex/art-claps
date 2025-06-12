@@ -777,29 +777,46 @@ export default function DiscoverPage() {
                   </div>
 
                   {/* Clap Button */}
-                  <button
-                    onClick={() => handleClap(artist.fid)}
-                    disabled={loading[artist.fid] || artist.alreadyClappedToday}
-                    style={{
-                      width: '100%',
-                      background: artist.alreadyClappedToday
-                        ? 'rgba(34, 197, 94, 0.3)' 
-                        : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                      border: 'none',
-                      borderRadius: '12px',
-                      padding: '1rem',
-                      color: 'white',
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      cursor: loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer',
-                      opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1,
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    {loading[artist.fid] ? '👏 Clapping...' : 
-                     artist.alreadyClappedToday ? '✅ Clapped Today!' : 
-                     '👏 Clap for Artist (+5 CLAPS)'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleClap(artist.fid)}
+                      disabled={loading[artist.fid] || artist.alreadyClappedToday}
+                      className={`flex-1 ${
+                        artist.alreadyClappedToday
+                          ? 'bg-rgba(34, 197, 94, 0.3)' 
+                          : 'bg-linear-gradient(45deg, #667eea 0%, #764ba2 100%)'
+                      } border-none rounded-xl py-3 px-4 text-white text-lg font-semibold cursor-${
+                        loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer'
+                      } opacity-${
+                        loading[artist.fid] || artist.alreadyClappedToday ? '70' : '100'
+                      } transition-all duration-300ms ease`}
+                      style={{
+                        background: artist.alreadyClappedToday
+                          ? 'rgba(34, 197, 94, 0.3)' 
+                          : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                        cursor: loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer',
+                        opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1
+                      }}
+                    >
+                      {loading[artist.fid] ? '👏 Clapping...' : 
+                       artist.alreadyClappedToday ? '✅ Clapped Today!' : 
+                       '👏 Clap for Artist (+5 CLAPS)'}
+                    </button>
+
+                    <a
+                      href={`/artist/${artist.username}`}
+                      className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 rounded-xl py-3 px-4 text-white text-center font-medium transition-all duration-300ms ease hover:scale-105"
+                      style={{
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '120px'
+                      }}
+                    >
+                      👤 Profile
+                    </a>
+                  </div>
                 </div>
               ))}
             </div>

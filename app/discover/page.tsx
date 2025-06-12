@@ -290,22 +290,22 @@ export default function DiscoverPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem',
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: 'white',
               textDecoration: 'none',
               padding: '0.75rem',
               borderRadius: '12px',
               transition: 'background 0.2s ease',
-              fontSize: '0.95rem',
-              position: 'relative'
+              fontSize: '0.95rem'
             }}
-            onClick={(e) => {
-              e.preventDefault();
-              alert('🚧 Referral codes page needs auth fix - coming soon!');
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'transparent';
             }}
           >
             <span>🎟️</span>
             <span>My Referral Codes</span>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(Soon)</span>
           </a>
         )}
 

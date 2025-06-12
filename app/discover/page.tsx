@@ -34,6 +34,8 @@ export default function DiscoverPage() {
   const [error, setError] = useState<string | null>(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [userRole, setUserRole] = useState<'supporter' | 'verified_artist' | 'admin'>('supporter');
+  const [syncingFarcaster, setSyncingFarcaster] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +91,47 @@ export default function DiscoverPage() {
       setError('Failed to initialize user data');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSyncFarcaster = async () => {
+    if (!profile?.fid || syncingFarcaster) return;
+
+    setSyncingFarcaster(true);
+    setSyncMessage(null);
+
+    try {
+      const response = await fetch('/api/sync-farcaster', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userFid: profile.fid
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSyncMessage(result.message);
+        
+        // Refresh user stats and artists if activities were found
+        if (result.activitiesDetected > 0) {
+          await fetchUserStats();
+          await fetchArtists();
+        }
+        
+        // Clear message after 5 seconds
+        setTimeout(() => setSyncMessage(null), 5000);
+      } else {
+        setSyncMessage(result.error || 'Failed to sync activities');
+      }
+    } catch (error) {
+      console.error('Error syncing Farcaster activities:', error);
+      setSyncMessage('Failed to sync activities. Please try again.');
+    } finally {
+      setSyncingFarcaster(false);
     }
   };
 
@@ -282,10 +325,35 @@ export default function DiscoverPage() {
           </a>
         )}
 
-        {/* Referral Codes - For verified artists and admins */}
-        {(userRole === 'verified_artist' || userRole === 'admin') && (
+        {/* Referral Codes - Now available for all users */}
+        <a
+          href="/referral-codes"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            color: 'white',
+            textDecoration: 'none',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            transition: 'background 0.2s ease',
+            fontSize: '0.95rem'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <span>🎟️</span>
+          <span>Referral Codes</span>
+        </a>
+
+        {/* Apply to be Artist - Only for supporters, no blocking alert */}
+        {userRole === 'supporter' && (
           <a
-            href="/referral-codes"
+            href="/apply"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -304,34 +372,8 @@ export default function DiscoverPage() {
               e.currentTarget.style.background = 'transparent';
             }}
           >
-            <span>🎟️</span>
-            <span>My Referral Codes</span>
-          </a>
-        )}
-
-        {/* Apply to be Artist - Only for supporters */}
-        {userRole === 'supporter' && (
-          <a
-            href="/apply"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              color: 'rgba(255, 255, 255, 0.7)',
-              textDecoration: 'none',
-              padding: '0.75rem',
-              borderRadius: '12px',
-              transition: 'background 0.2s ease',
-              fontSize: '0.95rem'
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              alert('🚧 Apply page needs auth fix - coming soon!');
-            }}
-          >
             <span>🎨</span>
             <span>Apply to be Artist</span>
-            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>(Soon)</span>
           </a>
         )}
 

@@ -1,6 +1,6 @@
 # Art Claps - Support Artists on Farcaster
 
-A SocialFi platform that rewards community members for supporting and discovering artists on Farcaster.
+A INSANE SocialFi platform that rewards community members for supporting and discovering artists on Farcaster.
 
 ## 🚀 Quick Deploy to Vercel
 

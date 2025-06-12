@@ -1,8 +1,11 @@
 // app/api/user/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { createClient } from '@supabase/supabase-js';
 
-const prisma = new PrismaClient();
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,27 +20,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    let user = await prisma.user.findUnique({
-      where: { farcasterFid: parseInt(farcasterFid) }
-    });
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('farcasterFid', farcasterFid)
+      .single();
 
-    if (user) {
-      // Update existing user with latest Farcaster data
-      user = await prisma.user.update({
-        where: { farcasterFid: parseInt(farcasterFid) },
-        data: {
+    let user;
+    if (existingUser) {
+      // Update existing user
+      const { data, error } = await supabase
+        .from('users')
+        .update({
           username,
           displayName: displayName || username,
           pfpUrl,
           bio,
-          updatedAt: new Date()
-        }
-      });
+          updatedAt: new Date().toISOString()
+        })
+        .eq('farcasterFid', farcasterFid)
+        .select()
+        .single();
+
+      if (error) throw error;
+      user = data;
     } else {
       // Create new user
-      user = await prisma.user.create({
-        data: {
-          farcasterFid: parseInt(farcasterFid),
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          farcasterFid,
           username,
           displayName: displayName || username,
           pfpUrl,
@@ -47,9 +59,13 @@ export async function POST(request: NextRequest) {
           monthlyPoints: 0,
           supportGiven: 0,
           supportReceived: 0,
-          verifiedArtist: false // Can be manually verified later
-        }
-      });
+          verifiedArtist: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      user = data;
     }
 
     return NextResponse.json({
@@ -88,21 +104,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { farcasterFid: parseInt(fid) },
-      include: {
-        activitiesGiven: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        },
-        activitiesReceived: {
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
-      }
-    });
+    const { data: user, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        activitiesGiven:activities!activities_userId_fkey(
+          id,
+          activityType,
+          pointsEarned,
+          createdAt
+        ),
+        activitiesReceived:activities!activities_targetUserId_fkey(
+          id,
+          activityType,
+          pointsEarned,
+          createdAt
+        )
+      `)
+      .eq('farcasterFid', fid)
+      .single();
 
-    if (!user) {
+    if (error || !user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -123,8 +145,8 @@ export async function GET(request: NextRequest) {
         supportGiven: user.supportGiven,
         supportReceived: user.supportReceived,
         verifiedArtist: user.verifiedArtist,
-        recentActivitiesGiven: user.activitiesGiven,
-        recentActivitiesReceived: user.activitiesReceived
+        recentActivitiesGiven: user.activitiesGiven?.slice(0, 10) || [],
+        recentActivitiesReceived: user.activitiesReceived?.slice(0, 10) || []
       }
     });
 

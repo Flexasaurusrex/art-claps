@@ -19,6 +19,7 @@ export async function GET() {
       .from('users')
       .select(`
         id,
+        "farcasterFid",
         username,
         "displayName",
         "pfpUrl",

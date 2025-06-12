@@ -19,160 +19,304 @@ export default function HomePage() {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      textAlign: 'center'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
       {/* Header */}
-      <div style={{
-        position: 'absolute',
-        top: '2rem',
-        left: '2rem',
-        fontSize: '1.5rem',
-        fontWeight: 'bold',
-        color: 'white'
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '2rem 3rem',
+        position: 'relative'
       }}>
-        Art Claps
-      </div>
-
-      {/* Main Content */}
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto'
-      }}>
-        {/* Logo/Icon */}
         <div style={{
-          fontSize: '6rem',
-          marginBottom: '2rem',
-          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-        }}>
-          🎨👏
-        </div>
-
-        {/* Title */}
-        <h1 style={{
-          fontSize: '4rem',
-          fontWeight: '800',
-          color: 'white',
-          marginBottom: '1rem',
-          textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          fontSize: '1.5rem',
+          fontWeight: '700',
+          color: 'white'
         }}>
           Art Claps
-        </h1>
-
-        {/* Subtitle */}
-        <p style={{
-          fontSize: '1.5rem',
-          color: 'rgba(255, 255, 255, 0.9)',
-          marginBottom: '1rem',
-          fontWeight: '300'
+        </div>
+        
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.2)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '50px',
+          padding: '0.75rem 1.5rem',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          color: 'white',
+          fontSize: '0.95rem',
+          fontWeight: '500',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
         }}>
-          The SocialFi Platform for Farcaster Artists
-        </p>
+          🔐 Sign in
+        </div>
+      </header>
 
-        {/* Description */}
-        <p style={{
-          fontSize: '1.1rem',
-          color: 'rgba(255, 255, 255, 0.8)',
-          lineHeight: '1.6',
-          marginBottom: '3rem',
-          maxWidth: '500px',
-          margin: '0 auto 3rem auto'
-        }}>
-          Support amazing artists, earn CLAPS points, and build a thriving creative community. 
-          Every clap, share, and connection earns you rewards while empowering artists.
-        </p>
+      {/* Main Content */}
+      <main style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4rem 2rem',
+        textAlign: 'center',
+        maxWidth: '1400px',
+        margin: '0 auto'
+      }}>
+        
+        {/* Hero Section */}
+        <div style={{ marginBottom: '6rem' }}>
+          <h1 style={{
+            fontSize: 'clamp(3rem, 8vw, 6rem)',
+            fontWeight: '800',
+            color: 'white',
+            marginBottom: '2rem',
+            lineHeight: '1.1',
+            letterSpacing: '-0.02em'
+          }}>
+            Support Artists.
+            <br />
+            <span style={{
+              background: 'linear-gradient(45deg, #ffd700, #ffed4e)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Earn Rewards.
+            </span>
+          </h1>
+          
+          <p style={{
+            fontSize: '1.3rem',
+            color: 'rgba(255, 255, 255, 0.9)',
+            maxWidth: '700px',
+            margin: '0 auto',
+            lineHeight: '1.6',
+            fontWeight: '400'
+          }}>
+            The SocialFi platform where supporting Farcaster artists earns you points, builds community, and rewards authentic engagement.
+          </p>
+        </div>
 
-        {/* Features */}
+        {/* Feature Cards Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '3rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '2rem',
+          width: '100%',
+          maxWidth: '1200px',
+          marginBottom: '4rem'
         }}>
+          
+          {/* Clap to Earn */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '15px',
-            padding: '1.5rem',
-            textAlign: 'center'
+            borderRadius: '24px',
+            padding: '2.5rem 2rem',
+            textAlign: 'center',
+            transition: 'transform 0.3s ease, background 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-8px)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👏</div>
-            <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-              Clap for Artists
+            <div style={{ 
+              fontSize: '3rem', 
+              marginBottom: '1.5rem',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+            }}>
+              👏
+            </div>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.4rem',
+              fontWeight: '700',
+              marginBottom: '1rem'
+            }}>
+              Clap to Earn
             </h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-              Support artists and earn 5 CLAPS points per artist daily
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '1rem',
+              lineHeight: '1.5'
+            }}>
+              Support artists and earn points for genuine engagement
             </p>
           </div>
 
+          {/* Discover Artists */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '15px',
-            padding: '1.5rem',
-            textAlign: 'center'
+            borderRadius: '24px',
+            padding: '2.5rem 2rem',
+            textAlign: 'center',
+            transition: 'transform 0.3s ease, background 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-8px)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
-            <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-              Earn Rewards
+            <div style={{ 
+              fontSize: '3rem', 
+              marginBottom: '1.5rem',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+            }}>
+              🎨
+            </div>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.4rem',
+              fontWeight: '700',
+              marginBottom: '1rem'
+            }}>
+              Discover Artists
             </h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-              Share work, write critiques, and create art threads for more points
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '1rem',
+              lineHeight: '1.5'
+            }}>
+              Find and connect with amazing creators on Farcaster
             </p>
           </div>
 
+          {/* Build Reputation */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '15px',
-            padding: '1.5rem',
-            textAlign: 'center'
+            borderRadius: '24px',
+            padding: '2.5rem 2rem',
+            textAlign: 'center',
+            transition: 'transform 0.3s ease, background 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-8px)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
           }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🤝</div>
-            <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-              Build Community
+            <div style={{ 
+              fontSize: '3rem', 
+              marginBottom: '1.5rem',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+            }}>
+              🏆
+            </div>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.4rem',
+              fontWeight: '700',
+              marginBottom: '1rem'
+            }}>
+              Build Reputation
             </h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
-              Connect with artists and track your support relationships
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '1rem',
+              lineHeight: '1.5'
+            }}>
+              Climb the leaderboard as a true community supporter
+            </p>
+          </div>
+
+          {/* Unlock Rewards */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '24px',
+            padding: '2.5rem 2rem',
+            textAlign: 'center',
+            transition: 'transform 0.3s ease, background 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-8px)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}>
+            <div style={{ 
+              fontSize: '3rem', 
+              marginBottom: '1.5rem',
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+            }}>
+              💎
+            </div>
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.4rem',
+              fontWeight: '700',
+              marginBottom: '1rem'
+            }}>
+              Unlock Rewards
+            </h3>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '1rem',
+              lineHeight: '1.5'
+            }}>
+              Redeem points for exclusive artist collaborations
             </p>
           </div>
         </div>
 
-        {/* Sign In Section */}
+        {/* CTA Section */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.1)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '20px',
-          padding: '2rem',
-          marginBottom: '2rem'
+          borderRadius: '24px',
+          padding: '3rem 2rem',
+          textAlign: 'center',
+          maxWidth: '600px',
+          width: '100%'
         }}>
           <h2 style={{
             color: 'white',
-            fontSize: '1.5rem',
-            marginBottom: '1rem',
-            fontWeight: '600'
+            fontSize: '2rem',
+            fontWeight: '700',
+            marginBottom: '1rem'
           }}>
             Ready to start supporting artists?
           </h2>
           
           <p style={{
             color: 'rgba(255, 255, 255, 0.8)',
-            marginBottom: '1.5rem',
-            fontSize: '1rem'
+            fontSize: '1.1rem',
+            marginBottom: '2rem',
+            lineHeight: '1.6'
           }}>
-            Connect your Farcaster account to join the Art Claps community
+            Connect your Farcaster account to join the Art Claps community and start earning rewards for authentic engagement.
           </p>
 
-          {/* Sign In Button */}
           <div style={{
             display: 'flex',
             justifyContent: 'center'
@@ -181,24 +325,16 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Beta Notice */}
-        <p style={{
+        {/* Footer */}
+        <div style={{
+          marginTop: '4rem',
           fontSize: '0.9rem',
           color: 'rgba(255, 255, 255, 0.6)',
-          fontStyle: 'italic'
+          textAlign: 'center'
         }}>
           🚀 Now in beta • Building the future of artist support on Farcaster
-        </p>
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        marginTop: '3rem',
-        fontSize: '0.9rem',
-        color: 'rgba(255, 255, 255, 0.6)'
-      }}>
-        Built with ❤️ for the Farcaster art community
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

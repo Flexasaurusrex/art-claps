@@ -1,6 +1,8 @@
+// Update app/providers.tsx
 'use client';
 import '@farcaster/auth-kit/styles.css';
 import { AuthKitProvider } from '@farcaster/auth-kit';
+import { AuthProvider } from './contexts/AuthContext';
 
 const config = {
   rpcUrl: 'https://mainnet.optimism.io',
@@ -18,7 +20,9 @@ const config = {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthKitProvider config={config}>
-      {children}
+      <AuthProvider>
+        {children}
+      </AuthProvider>
     </AuthKitProvider>
   );
 }

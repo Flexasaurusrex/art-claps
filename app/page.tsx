@@ -23,7 +23,13 @@ export default function HomePage() {
           Art Claps
         </div>
         
-        <div className="flex justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
+          <a 
+            href="/apply"
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 hover:scale-105 no-underline text-sm sm:text-base shadow-lg"
+          >
+            🎨 Apply as Artist
+          </a>
           <SignInButton />
         </div>
       </header>
@@ -42,9 +48,20 @@ export default function HomePage() {
             </span>
           </h1>
           
-          <p className="text-lg sm:text-xl lg:text-2xl text-white/90 max-w-2xl lg:max-w-4xl mx-auto leading-relaxed font-normal px-4">
+          <p className="text-lg sm:text-xl lg:text-2xl text-white/90 max-w-2xl lg:max-w-4xl mx-auto leading-relaxed font-normal px-4 mb-8">
             The SocialFi platform where supporting Farcaster artists earns you points, builds community, and rewards authentic engagement.
           </p>
+
+          {/* Hero CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center justify-center">
+            <SignInButton />
+            <a 
+              href="/apply"
+              className="bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/50 text-white font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-xl transition-all duration-300 hover:scale-105 no-underline text-sm sm:text-base shadow-lg"
+            >
+              🎨 Apply to Become Artist
+            </a>
+          </div>
         </div>
 
         {/* Feature Cards Grid */}
@@ -116,12 +133,16 @@ export default function HomePage() {
           <div className="flex flex-col gap-4 lg:gap-6 items-center">
             <SignInButton />
             
+            <div className="text-white/60 text-sm">
+              Or if you're an artist...
+            </div>
+            
             {/* Apply to Become Artist Button */}
             <a 
               href="/apply"
-              className="bg-white/20 border border-white/30 rounded-xl px-4 sm:px-6 lg:px-8 py-3 lg:py-4 text-white no-underline text-sm sm:text-base lg:text-lg font-medium transition-all duration-300 hover:bg-white/30 hover:scale-105 inline-block"
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-xl transition-all duration-300 hover:scale-105 no-underline text-sm sm:text-base shadow-lg"
             >
-              🎨 Apply to Become Artist
+              🎨 Apply to Become Verified Artist
             </a>
           </div>
         </div>

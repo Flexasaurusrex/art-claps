@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, farcasterFid')
-      .eq('farcasterFid', parseInt(fid))
+      .eq('farcasterFid', fid)
       .single();
 
     if (userError || !user) {
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         description: 'Updated profile information',
         metadata: { 
           updatedFields: Object.keys(updateData),
-          fid: parseInt(fid)
+          fid: fid
         }
       });
 

@@ -1,6 +1,6 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
-import Providers from './providers'
+import { Providers } from './providers'  // FIXED: Named import instead of default
 import type { Metadata } from 'next'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,7 +26,6 @@ export const metadata: Metadata = {
       },
     ],
   },
-
   // Twitter
   twitter: {
     card: 'summary_large_image',
@@ -34,7 +33,6 @@ export const metadata: Metadata = {
     description: 'Discover artists, earn CLAPS points, climb the leaderboard! The hottest creator economy on Farcaster',
     images: ['https://art-claps.vercel.app/og-image.png'],
   },
-
   // Basic Meta
   keywords: ['Farcaster', 'SocialFi', 'NFT', 'creators', 'artists', 'crypto'],
   authors: [{ name: 'Art Claps' }],
@@ -46,10 +44,8 @@ export const metadata: Metadata = {
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },
-
   // Manifest
   manifest: '/site.webmanifest',
-
   // Other
   robots: {
     index: true,
@@ -67,9 +63,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="theme-color" content="#8b5cf6" />
-      </head>
       <body className={inter.className}>
         <Providers>
           {children}

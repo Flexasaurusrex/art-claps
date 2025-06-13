@@ -67,6 +67,15 @@ export default function DiscoverPage() {
     }
   }, [isAuthenticated, profile]);
 
+  // DEBUG: Log auth state changes
+  useEffect(() => {
+    console.log('Auth state changed:', { 
+      isAuthenticated, 
+      profileUsername: profile?.username,
+      profileFid: profile?.fid 
+    });
+  }, [isAuthenticated, profile]);
+
   const initializeUser = async () => {
     try {
       // Register/update user in database

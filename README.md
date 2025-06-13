@@ -1,4 +1,4 @@
-# Art Claps - Support Artists on Farcaster
+# Art Claps - Support Your Favorite Artists on Farcaster
 
 A INSANE SocialFi platform that rewards community members for supporting and discovering artists on Farcaster.
 

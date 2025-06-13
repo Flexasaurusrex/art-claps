@@ -90,15 +90,15 @@ export async function POST(request: NextRequest) {
     const detectedActivities = [];
 
     try {
-      // Get user's recent casts (last 24 hours)
-      const userCasts = await neynar.fetchCastsForUser(userFid, {
-        limit: 50 // Adjust as needed
+      // Get user's recent casts (last 50 casts)
+      const userCastsResponse = await neynar.fetchCastsForUser(userFid, {
+        limit: 50
       });
 
-      console.log(`📝 Found ${userCasts.casts.length} recent casts from user`);
+      console.log(`📝 Found ${userCastsResponse.casts.length} recent casts from user`);
 
       // Check each cast for interactions with verified artists
-      for (const cast of userCasts.casts) {
+      for (const cast of userCastsResponse.casts) {
         const castTimestamp = new Date(cast.timestamp);
         
         // Only check casts from the last 24 hours
@@ -170,91 +170,88 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Get user's reactions (likes) to check for artist support
-      const userReactions = await neynar.fetchUserReactions(userFid, {
-        limit: 50,
-        type: 'likes' // Focus on likes for now
-      });
+      // Get user's reactions - using the correct API method
+      try {
+        const userReactionsResponse = await neynar.fetchUserReactions(userFid, "likes", {
+          limit: 50
+        });
 
-      console.log(`❤️ Found ${userReactions.reactions.length} recent reactions from user`);
+        console.log(`❤️ Found ${userReactionsResponse.reactions.length} recent reactions from user`);
 
-      // Check reactions to verified artists' casts
-      for (const reaction of userReactions.reactions) {
-        const reactionTimestamp = new Date(reaction.timestamp);
-        
-        // Only check reactions from the last 24 hours
-        if (reactionTimestamp < twentyFourHoursAgo) continue;
+        // Check reactions to verified artists' casts
+        for (const reaction of userReactionsResponse.reactions) {
+          const reactionTimestamp = new Date(reaction.timestamp);
+          
+          // Only check reactions from the last 24 hours
+          if (reactionTimestamp < twentyFourHoursAgo) continue;
 
-        // Find if the reaction target is a verified artist
-        const targetArtist = artists.find(artist => artist.farcasterFid === reaction.cast.author.fid);
-        
-        if (targetArtist) {
-          // Check if we already recorded this reaction
-          const { data: existingActivity } = await supabase
-            .from('activities')
-            .select('id')
-            .eq('"userId"', user.id)
-            .eq('"activityType"', 'CLAP_REACTION')
-            .eq('"farcasterCastHash"', reaction.cast.hash)
-            .eq('"targetUserId"', targetArtist.id)
-            .single();
+          // Find if the reaction target is a verified artist
+          const targetArtist = artists.find(artist => artist.farcasterFid === reaction.cast.author.fid);
+          
+          if (targetArtist) {
+            // Check if we already recorded this reaction
+            const { data: existingActivity } = await supabase
+              .from('activities')
+              .select('id')
+              .eq('"userId"', user.id)
+              .eq('"activityType"', 'CLAP_REACTION')
+              .eq('"farcasterCastHash"', reaction.cast.hash)
+              .eq('"targetUserId"', targetArtist.id)
+              .single();
 
-          if (existingActivity) {
-            console.log(`⚠️ Reaction already recorded for cast ${reaction.cast.hash}`);
-            continue;
-          }
+            if (existingActivity) {
+              console.log(`⚠️ Reaction already recorded for cast ${reaction.cast.hash}`);
+              continue;
+            }
 
-          // Award points for supporting artist
-          try {
-            const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                userId: user.id,
-                activityType: 'CLAP_REACTION',
-                targetUserId: targetArtist.id,
-                farcasterCastHash: reaction.cast.hash,
-                metadata: {
-                  syncedFromFarcaster: true,
-                  realFarcasterData: true,
-                  reactionType: 'like',
-                  castText: reaction.cast.text,
-                  timestamp: reaction.timestamp,
-                  targetArtistUsername: targetArtist.username
-                }
-              })
-            });
-
-            if (activityResponse.ok) {
-              const activityResult = await activityResponse.json();
-              totalActivitiesDetected++;
-              
-              detectedActivities.push({
-                type: 'CLAP_REACTION',
-                targetArtist: targetArtist.username,
-                points: activityResult.pointsAwarded,
-                timestamp: reaction.timestamp,
-                castHash: reaction.cast.hash
+            // Award points for supporting artist
+            try {
+              const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: user.id,
+                  activityType: 'CLAP_REACTION',
+                  targetUserId: targetArtist.id,
+                  farcasterCastHash: reaction.cast.hash,
+                  metadata: {
+                    syncedFromFarcaster: true,
+                    realFarcasterData: true,
+                    reactionType: 'like',
+                    castText: reaction.cast.text,
+                    timestamp: reaction.timestamp,
+                    targetArtistUsername: targetArtist.username
+                  }
+                })
               });
 
-              console.log(`✅ Awarded ${activityResult.pointsAwarded} points for liking @${targetArtist.username}'s cast`);
+              if (activityResponse.ok) {
+                const activityResult = await activityResponse.json();
+                totalActivitiesDetected++;
+                
+                detectedActivities.push({
+                  type: 'CLAP_REACTION',
+                  targetArtist: targetArtist.username,
+                  points: activityResult.pointsAwarded,
+                  timestamp: reaction.timestamp,
+                  castHash: reaction.cast.hash
+                });
+
+                console.log(`✅ Awarded ${activityResult.pointsAwarded} points for liking @${targetArtist.username}'s cast`);
+              }
+            } catch (error) {
+              console.error(`❌ Error recording reaction activity:`, error);
             }
-          } catch (error) {
-            console.error(`❌ Error recording reaction activity:`, error);
           }
         }
+      } catch (reactionError) {
+        console.log('⚠️ Could not fetch user reactions, skipping reaction detection');
       }
 
-      // Get user's recasts to check for artist promotion
-      const userRecasts = await neynar.fetchCastsForUser(userFid, {
-        limit: 25,
-        include_replies: false
-      });
-
-      // Check for recasts of artist content
-      for (const cast of userRecasts.casts) {
+      // Check for recasts by looking at user's casts with parent_hash
+      for (const cast of userCastsResponse.casts) {
         const castTimestamp = new Date(cast.timestamp);
         
         // Only check recasts from the last 24 hours
@@ -264,8 +261,8 @@ export async function POST(request: NextRequest) {
         if (cast.parent_hash) {
           try {
             // Get the original cast to see if it's from an artist
-            const originalCast = await neynar.fetchCastByHash(cast.parent_hash);
-            const originalArtist = artists.find(artist => artist.farcasterFid === originalCast.cast.author.fid);
+            const originalCastResponse = await neynar.lookUpCastByHash(cast.parent_hash);
+            const originalArtist = artists.find(artist => artist.farcasterFid === originalCastResponse.cast.author.fid);
             
             if (originalArtist) {
               // Check if we already recorded this recast
@@ -325,7 +322,7 @@ export async function POST(request: NextRequest) {
               }
             }
           } catch (error) {
-            console.error(`❌ Error fetching original cast:`, error);
+            console.log(`⚠️ Could not fetch original cast for hash ${cast.parent_hash}`);
           }
         }
       }

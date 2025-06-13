@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const { count: currentCodes } = await supabase
       .from('referral_codes')
       .select('*', { count: 'exact', head: true })
-      .eq('createdBy', user.id)
+      .eq('createdby', user.id)
       .eq('used', false);
 
     if ((currentCodes || 0) >= 10) {
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       .from('referral_codes')
       .insert({
         code,
-        createdBy: user.id,
+        createdby: user.id,
         used: false
       })
       .select()
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
         id: newCode.id,
         code: newCode.code,
         used: false,
-        createdAt: newCode.createdAt,
+        createdAt: newCode.createdat,
         usedBy: null
       }
     });

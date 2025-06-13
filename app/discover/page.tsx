@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Artist {
@@ -294,139 +295,174 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 font-sans">
-      {/* Header with User Stats */}
-      <header className="p-4 lg:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="text-2xl lg:text-3xl font-bold text-white">
-          <a href="/" className="text-white no-underline">
-            Art Claps
-          </a>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
-          {/* User Stats Display */}
-          {userStats && (
-            <div className="bg-white/10 rounded-xl p-3 lg:p-4 flex gap-4 lg:gap-6 backdrop-blur-sm w-full sm:w-auto">
-              <div className="text-center">
-                <div className="text-lg lg:text-xl font-bold text-white">
-                  {userStats.totalPoints.toLocaleString()}
-                </div>
-                <div className="text-xs lg:text-sm text-white/70">
-                  Total CLAPS
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg lg:text-xl font-bold text-white">
-                  {userStats.weeklyPoints}
-                </div>
-                <div className="text-xs lg:text-sm text-white/70">
-                  This Week
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* User Profile with Dropdown */}
-          <div className="relative">
-            <div 
-              className="flex items-center gap-2 lg:gap-3 cursor-pointer p-2 rounded-xl transition-colors hover:bg-white/10"
-              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-            >
-              <img 
-                src={profile.pfpUrl} 
-                alt={profile.displayName}
-                className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-white/30"
-              />
-              <div className="text-white hidden sm:block">
-                <div className="font-semibold text-sm lg:text-base">{profile.displayName}</div>
-                <div className="text-xs lg:text-sm opacity-80">@{profile.username}</div>
-              </div>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="rgba(255,255,255,0.7)"
-                strokeWidth="2"
-                className={`transition-transform ${showProfileDropdown ? 'rotate-180' : 'rotate-0'}`}
-              >
-                <polyline points="6,9 12,15 18,9"></polyline>
-              </svg>
+      {/* Enhanced Header with Leaderboard Navigation */}
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 lg:py-4">
+          <div className="flex items-center justify-between">
+            {/* Left side - Home Link */}
+            <Link href="/" className="text-white hover:text-purple-200 transition-colors text-lg lg:text-xl font-bold">
+              Art Claps
+            </Link>
+            
+            {/* Center - Navigation Actions */}
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+              {/* Leaderboard Button - Golden styling to make it special */}
+              <Link href="/leaderboard">
+                <button className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 text-yellow-300 font-medium py-2 px-3 sm:px-4 lg:py-3 lg:px-6 rounded-xl hover:from-yellow-500/30 hover:to-orange-500/30 hover:scale-105 transition-all duration-300 text-xs sm:text-sm lg:text-base flex items-center gap-1 sm:gap-2 shadow-lg">
+                  <span className="text-sm sm:text-base">🏆</span>
+                  <span className="hidden sm:inline">Leaderboard</span>
+                </button>
+              </Link>
+
+              {/* Admin Panel Link (if admin) */}
+              {userRole === 'admin' && (
+                <Link href="/admin">
+                  <button className="bg-white/10 border border-white/20 text-white font-medium py-2 px-3 sm:px-4 lg:py-3 lg:px-6 rounded-xl hover:bg-white/20 transition-all duration-300 text-xs sm:text-sm lg:text-base flex items-center gap-1 sm:gap-2">
+                    <span className="text-sm sm:text-base">👑</span>
+                    <span className="hidden sm:inline">Admin</span>
+                  </button>
+                </Link>
+              )}
+
+              {/* Referral Codes Link (if artist/admin) */}
+              {(userRole === 'verified_artist' || userRole === 'admin') && (
+                <Link href="/referral-codes">
+                  <button className="bg-purple-500/20 border border-purple-500/50 text-purple-300 font-medium py-2 px-3 sm:px-4 lg:py-3 lg:px-6 rounded-xl hover:bg-purple-500/30 transition-all duration-300 text-xs sm:text-sm lg:text-base flex items-center gap-1 sm:gap-2">
+                    <span className="text-sm sm:text-base">🔗</span>
+                    <span className="hidden sm:inline">Referrals</span>
+                  </button>
+                </Link>
+              )}
             </div>
 
-            {/* Dropdown Menu */}
-            {showProfileDropdown && (
-              <div
-                ref={dropdownRef}
-                className="absolute top-full right-0 mt-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
-              >
-                {/* User Info Header */}
-                <div className="border-b border-white/20 pb-4 mb-4">
-                  <div className="text-white font-semibold mb-1">
-                    {profile?.displayName}
+            {/* Right side - User Stats & Profile */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* User Stats Display */}
+              {userStats && (
+                <div className="hidden md:flex bg-white/10 border border-white/20 rounded-lg px-2 sm:px-3 py-1 sm:py-2 gap-3 lg:gap-4">
+                  <div className="text-center">
+                    <div className="text-sm lg:text-base font-bold text-white">
+                      {userStats.totalPoints.toLocaleString()}
+                    </div>
+                    <div className="text-xs text-white/70">
+                      CLAPS
+                    </div>
                   </div>
-                  <div className="text-white/70 text-sm mb-2">
-                    @{profile?.username}
-                  </div>
-                  <div className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold border ${
-                    userRole === 'admin' 
-                      ? 'bg-red-500/20 border-red-500/50 text-red-400' 
-                      : userRole === 'verified_artist'
-                      ? 'bg-green-500/20 border-green-500/50 text-green-400'
-                      : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                  }`}>
-                    {userRole === 'admin' ? '👑 Admin' : 
-                     userRole === 'verified_artist' ? '✓ Verified Artist' : 
-                     '💎 Supporter'}
+                  <div className="text-center">
+                    <div className="text-sm lg:text-base font-bold text-white">
+                      {userStats.weeklyPoints}
+                    </div>
+                    <div className="text-xs text-white/70">
+                      Week
+                    </div>
                   </div>
                 </div>
-
-                {/* Navigation Links */}
-                <div className="space-y-2">
-                  
-                  {/* Admin Panel - Only for admins */}
-                  {userRole === 'admin' && (
-                    <button
-                      onClick={() => router.push('/admin')}
-                      className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-                    >
-                      <span>👑</span>
-                      <span>Admin Panel</span>
-                    </button>
-                  )}
-
-                  {/* Referral Codes */}
-                  <button
-                    onClick={() => router.push('/referral-codes')}
-                    className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+              )}
+              
+              {/* User Profile with Dropdown */}
+              <div className="relative">
+                <div 
+                  className="flex items-center gap-2 cursor-pointer p-2 rounded-xl transition-colors hover:bg-white/10"
+                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                >
+                  <img 
+                    src={profile.pfpUrl} 
+                    alt={profile.displayName}
+                    className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-white/30"
+                  />
+                  <div className="text-white hidden lg:block">
+                    <div className="font-semibold text-sm">{profile.displayName}</div>
+                    <div className="text-xs opacity-80">@{profile.username}</div>
+                  </div>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.7)"
+                    strokeWidth="2"
+                    className={`transition-transform ${showProfileDropdown ? 'rotate-180' : 'rotate-0'}`}
                   >
-                    <span>🎟️</span>
-                    <span>Referral Codes</span>
-                  </button>
-
-                  <div className="h-px bg-white/20 my-2" />
-
-                  {/* Home */}
-                  <button
-                    onClick={() => router.push('/')}
-                    className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-                  >
-                    <span>🏠</span>
-                    <span>Home</span>
-                  </button>
-
-                  {/* Sign Out */}
-                  <button
-                    onClick={() => {
-                      window.location.href = '/';
-                    }}
-                    className="flex items-center gap-3 text-white/80 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-                  >
-                    <span>🚪</span>
-                    <span>Sign Out</span>
-                  </button>
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
                 </div>
+
+                {/* Dropdown Menu */}
+                {showProfileDropdown && (
+                  <div
+                    ref={dropdownRef}
+                    className="absolute top-full right-0 mt-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
+                  >
+                    {/* User Info Header */}
+                    <div className="border-b border-white/20 pb-4 mb-4">
+                      <div className="text-white font-semibold mb-1">
+                        {profile?.displayName}
+                      </div>
+                      <div className="text-white/70 text-sm mb-2">
+                        @{profile?.username}
+                      </div>
+                      <div className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold border ${
+                        userRole === 'admin' 
+                          ? 'bg-red-500/20 border-red-500/50 text-red-400' 
+                          : userRole === 'verified_artist'
+                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                          : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                      }`}>
+                        {userRole === 'admin' ? '👑 Admin' : 
+                         userRole === 'verified_artist' ? '✓ Verified Artist' : 
+                         '💎 Supporter'}
+                      </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="space-y-2">
+                      
+                      {/* Admin Panel - Only for admins */}
+                      {userRole === 'admin' && (
+                        <button
+                          onClick={() => router.push('/admin')}
+                          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                        >
+                          <span>👑</span>
+                          <span>Admin Panel</span>
+                        </button>
+                      )}
+
+                      {/* Referral Codes */}
+                      <button
+                        onClick={() => router.push('/referral-codes')}
+                        className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                      >
+                        <span>🎟️</span>
+                        <span>Referral Codes</span>
+                      </button>
+
+                      <div className="h-px bg-white/20 my-2" />
+
+                      {/* Home */}
+                      <button
+                        onClick={() => router.push('/')}
+                        className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                      >
+                        <span>🏠</span>
+                        <span>Home</span>
+                      </button>
+
+                      {/* Sign Out */}
+                      <button
+                        onClick={() => {
+                          window.location.href = '/';
+                        }}
+                        className="flex items-center gap-3 text-white/80 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                      >
+                        <span>🚪</span>
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </header>
@@ -434,7 +470,7 @@ export default function DiscoverPage() {
       {/* Main Content */}
       <main className="px-4 lg:px-8 pb-16">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl lg:text-5xl font-extrabold text-white mb-4 text-center">
+          <h1 className="text-3xl lg:text-5xl font-extrabold text-white mb-4 text-center pt-8">
             🎨 Discover Artists
           </h1>
           

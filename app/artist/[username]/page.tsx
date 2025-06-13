@@ -355,11 +355,12 @@ export default function ArtistProfilePage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 lg:mb-8">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-6 lg:mb-8">
+          {/* Clap Button - Full Width */}
           <button 
             onClick={handleClap}
             disabled={clapping || alreadyClappedToday || !isAuthenticated}
-            className={`flex-1 font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 text-sm sm:text-base border-none cursor-pointer ${
+            className={`w-full font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 text-sm sm:text-base border-none cursor-pointer ${
               alreadyClappedToday
                 ? 'bg-green-500/30 text-green-300 cursor-not-allowed' 
                 : clapping
@@ -375,24 +376,41 @@ export default function ArtistProfilePage() {
              `👏 Clap for ${artist.displayName} (+5)`}
           </button>
           
-          <button 
-            onClick={handleFollow}
-            disabled={followLoading || !isAuthenticated}
-            className={`flex-1 font-medium py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 text-sm sm:text-base cursor-pointer border-none ${
-              !isAuthenticated
-                ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
-                : followLoading
-                ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
-                : isFollowing
-                ? 'bg-orange-500/20 border border-orange-500/50 text-orange-300 hover:bg-orange-500/30'
-                : 'bg-blue-500/20 border border-blue-500/50 text-blue-300 hover:bg-blue-500/30'
-            }`}
-          >
-            {followLoading ? '⏳ Loading...' :
-             !isAuthenticated ? '🔒 Sign in to Follow' :
-             isFollowing ? '✓ Following' : 
-             `🔔 Follow Artist (+10)`}
-          </button>
+          {/* Dual Follow Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button 
+              onClick={handleFollow}
+              disabled={followLoading || !isAuthenticated}
+              className={`flex-1 font-medium py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 text-sm sm:text-base cursor-pointer border-none ${
+                !isAuthenticated
+                  ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                  : followLoading
+                  ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                  : isFollowing
+                  ? 'bg-orange-500/20 border border-orange-500/50 text-orange-300 hover:bg-orange-500/30'
+                  : 'bg-blue-500/20 border border-blue-500/50 text-blue-300 hover:bg-blue-500/30'
+              }`}
+            >
+              {followLoading ? '⏳ Loading...' :
+               !isAuthenticated ? '🔒 Sign in to Follow' :
+               isFollowing ? '✓ Following' : 
+               `🔔 Follow on Art Claps (+10)`}
+            </button>
+            
+            <a
+              href={`https://warpcast.com/${artist.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-purple-500/20 border border-purple-500/50 text-purple-300 font-medium py-3 sm:py-4 px-6 rounded-xl hover:bg-purple-500/30 transition-all duration-300 text-sm sm:text-base cursor-pointer text-center flex items-center justify-center gap-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15,3 21,3 21,9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              View on Farcaster
+            </a>
+          </div>
         </div>
 
         {/* User Stats Display - Show when authenticated */}

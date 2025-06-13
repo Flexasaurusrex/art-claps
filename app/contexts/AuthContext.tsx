@@ -18,6 +18,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
   const [persistedAuth, setPersistedAuth] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [effectiveProfile, setEffectiveProfile] = useState<any>(null)
+  const [effectiveAuth, setEffectiveAuth] = useState(false)
 
   // Handle mounting
   useEffect(() => {
@@ -34,7 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Check if stored auth is still valid (within 24 hours)
           if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
             setPersistedAuth(parsed)
-            console.log('Restored auth from localStorage:', parsed.profile?.username)
+            setEffectiveAuth(true)
+            setEffectiveProfile(parsed.profile)
+            console.log('Restored auth from localStorage:', parsed.profile?.username, 'FID:', parsed.profile?.fid)
           } else {
             // Clear expired auth
             localStorage.removeItem('fc_auth_state')
@@ -49,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [mounted])
 
-  // Sync Farcaster auth state to localStorage
+  // Sync Farcaster auth state to localStorage and update effective state
   useEffect(() => {
     if (mounted && fcAuth && fcProfile) {
       const newState = {
@@ -58,10 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         timestamp: Date.now()
       }
       setPersistedAuth(newState)
+      setEffectiveAuth(true)
+      setEffectiveProfile(fcProfile)
       
       if (typeof window !== 'undefined') {
         localStorage.setItem('fc_auth_state', JSON.stringify(newState))
-        console.log('Saved auth to localStorage:', fcProfile.username)
+        console.log('Saved auth to localStorage:', fcProfile.username, 'FID:', fcProfile.fid)
       }
     }
   }, [fcAuth, fcProfile, mounted])
@@ -71,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (mounted && !fcAuth && !fcProfile && persistedAuth) {
       // Only clear if we had auth before but now don't
       setPersistedAuth(null)
+      setEffectiveAuth(false)
+      setEffectiveProfile(null)
       if (typeof window !== 'undefined') {
         localStorage.removeItem('fc_auth_state')
         console.log('Cleared auth from localStorage due to sign out')
@@ -86,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const parsed = JSON.parse(stored)
           if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
             setPersistedAuth(parsed)
+            setEffectiveAuth(true)
+            setEffectiveProfile(parsed.profile)
+            console.log('Refreshed auth from localStorage:', parsed.profile?.username, 'FID:', parsed.profile?.fid)
           }
         } catch (e) {
           console.error('Auth refresh failed:', e)
@@ -98,12 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (!mounted) {
     return null
   }
-
-  // Determine effective auth state
-  const effectiveAuth = fcAuth || (persistedAuth?.isAuthenticated && 
-    Date.now() - persistedAuth.timestamp < 24 * 60 * 60 * 1000)
-  
-  const effectiveProfile = fcProfile || (effectiveAuth ? persistedAuth?.profile : null)
 
   return (
     <AuthContext.Provider value={{

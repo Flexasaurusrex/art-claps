@@ -8,12 +8,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Helper function to safely extract data from Supabase foreign key relationships
-function extractRelationshipData<T>(data: T | T[] | null): T | null {
-  if (!data) return null;
-  return Array.isArray(data) ? data[0] : data;
-}
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -56,30 +50,21 @@ export async function GET(request: NextRequest) {
         id,
         code,
         used,
-        createdAt,
-        usedBy:users!referral_codes_usedBy_fkey(
-          username,
-          displayName
-        )
+        createdat,
+        usedby
       `)
-      .eq('createdBy', user.id)
-      .order('createdAt', { ascending: false });
+      .eq('createdby', user.id)
+      .order('createdat', { ascending: false });
 
     if (codesError) throw codesError;
 
-    const formattedCodes = codes?.map(code => {
-      // Safely handle usedBy relationship data (can be array or single object)
-      const usedByData = extractRelationshipData(code.usedBy);
-      
+    const formattedCodes = codes?.map(code => {      
       return {
         id: code.id,
         code: code.code,
         used: code.used,
-        createdAt: code.createdAt,
-        usedBy: usedByData ? {
-          username: usedByData.username,
-          displayName: usedByData.displayName
-        } : null
+        createdAt: code.createdat,
+        usedBy: null // We'll fetch user details separately if needed
       };
     }) || [];
 

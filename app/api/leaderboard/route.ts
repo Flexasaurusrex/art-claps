@@ -49,12 +49,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Add rankings to users
-    const rankedUsers = users.map((user, index) => ({
+    // Add rankings to users - SIMPLE FIX
+    const rankedUsers = users?.map((user: any, index: number) => ({
       ...user,
       rank: offset + index + 1,
-      points: user[pointsColumn] || 0
-    }));
+      points: user[pointsColumn] || 0  // TypeScript will accept this now
+    })) || [];
 
     // Get current user's position if FID provided
     let currentUserRank = null;
@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
         .eq('farcasterFid', parseInt(currentUserFid))
         .single();
 
-      if (currentUser && currentUser[pointsColumn] > 0) {
+      if (currentUser && (currentUser as any)[pointsColumn] > 0) {
         // Count users with higher points to get rank
         const { count } = await supabase
           .from('users')
           .select('*', { count: 'exact', head: true })
-          .gt(pointsColumn, currentUser[pointsColumn]);
+          .gt(pointsColumn, (currentUser as any)[pointsColumn]);
 
         currentUserRank = (count || 0) + 1;
       }
@@ -86,13 +86,14 @@ export async function GET(request: NextRequest) {
     // Get some fun stats
     const { data: stats } = await supabase
       .from('users')
-      .select(`
-        ${pointsColumn}
-      `)
+      .select(pointsColumn)
       .not(pointsColumn, 'is', null)
       .gt(pointsColumn, 0);
 
-    const totalPointsAwarded = stats?.reduce((sum, user) => sum + (user[pointsColumn] || 0), 0) || 0;
+    const totalPointsAwarded = stats?.reduce((sum: number, user: any) => {
+      return sum + (user[pointsColumn] || 0);
+    }, 0) || 0;
+    
     const averagePoints = stats?.length ? Math.round(totalPointsAwarded / stats.length) : 0;
 
     return NextResponse.json({

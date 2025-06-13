@@ -1,4 +1,4 @@
-// app/admin/page.tsx - FIXED AUTH LOGIC
+// app/admin/page.tsx - Mobile-Optimized Admin Panel
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -28,8 +28,8 @@ export default function AdminPage() {
   const [processing, setProcessing] = useState<{[key: string]: boolean}>({});
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Check if user is admin (you can hardcode your FID here)
-  const isAdmin = profile?.fid === 7418; // Replace with your actual FID
+  // Check if user is admin (FID 7418)
+  const isAdmin = profile?.fid === 7418;
 
   useEffect(() => {
     // Debug: Log auth state
@@ -42,38 +42,6 @@ export default function AdminPage() {
     // Skip auth checks for now - just load the page
     setAuthChecked(true);
     fetchPendingArtists();
-
-    /* TEMP DISABLED - Auth checks not working on navigation
-    // Wait a moment for auth to load
-    const timer = setTimeout(() => {
-      console.log('Admin page - After timeout:', { 
-        isAuthenticated, 
-        profile: profile?.fid, 
-        isAdmin: profile?.fid === 7418 
-      });
-      
-      setAuthChecked(true);
-      
-      if (!isAuthenticated) {
-        console.log('Redirecting: Not authenticated');
-        router.push('/');
-        return;
-      }
-      
-      if (isAuthenticated && !isAdmin) {
-        console.log('Redirecting: Not admin');
-        router.push('/discover');
-        return;
-      }
-
-      if (isAdmin) {
-        console.log('Loading admin data...');
-        fetchPendingArtists();
-      }
-    }, 2000); // Increase to 2 seconds
-
-    return () => clearTimeout(timer);
-    */
   }, [isAuthenticated, isAdmin, router]);
 
   const fetchPendingArtists = async () => {
@@ -107,7 +75,6 @@ export default function AdminPage() {
     setProcessing(prev => ({ ...prev, [artistId]: true }));
 
     try {
-      // Fixed API endpoint to match our built API
       const response = await fetch('/api/admin/pending-artists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,127 +107,63 @@ export default function AdminPage() {
   // Show loading while data loads
   if (isLoading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem'
-      }}>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg lg:text-xl px-4">
         Loading Admin Panel... 👑
       </div>
     );
   }
 
-  // TEMP: Skip all auth checks for testing
-  // if (!authChecked || (isLoading && isAuthenticated)) {
-  //   return loading state
-  // }
-
-  // if (!isAuthenticated || !isAdmin) {
-  //   return access denied
-  // }
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 font-sans">
       {/* Header */}
-      <header style={{
-        padding: '2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-      }}>
-        <div style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          color: 'white'
-        }}>
-          <a href="/" style={{ color: 'white', textDecoration: 'none' }}>
+      <header className="p-4 sm:p-6 lg:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/10 gap-4">
+        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+          <a href="/" className="text-white no-underline hover:text-purple-200 transition-colors">
             Art Claps Admin
           </a>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
           <a 
             href="/discover"
-            style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              textDecoration: 'none',
-              fontSize: '1rem'
-            }}
+            className="text-white/80 hover:text-white no-underline text-sm lg:text-base transition-colors flex items-center gap-2"
           >
-            ← Back to Discover
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            Back to Discover
           </a>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="flex items-center gap-3">
             <img 
-              src={profile.pfpUrl} 
-              alt={profile.displayName}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: '2px solid rgba(255, 255, 255, 0.3)'
-              }}
+              src={profile?.pfpUrl} 
+              alt={profile?.displayName}
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/30"
             />
-            <div style={{ color: 'white' }}>
-              <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Admin</div>
+            <div className="text-white">
+              <div className="font-semibold text-sm sm:text-base">{profile?.displayName}</div>
+              <div className="text-xs sm:text-sm opacity-80">Admin</div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main style={{ padding: '2rem' }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto'
-        }}>
+      <main className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
           
           {/* Stats Header */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '16px',
-            padding: '2rem',
-            marginBottom: '2rem',
-            textAlign: 'center'
-          }}>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: '800',
-              color: 'white',
-              marginBottom: '1rem'
-            }}>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 mb-6 lg:mb-8 text-center">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mb-4 lg:mb-6">
               🛡️ Artist Applications
             </h1>
             
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '3rem'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontSize: '2rem',
-                  fontWeight: '700',
-                  color: '#ffd700'
-                }}>
+            <div className="flex justify-center">
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-yellow-400 mb-2">
                   {pendingArtists.length}
                 </div>
-                <div style={{
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontSize: '1rem'
-                }}>
+                <div className="text-white/80 text-sm sm:text-base lg:text-lg">
                   Pending Review
                 </div>
               </div>
@@ -269,129 +172,63 @@ export default function AdminPage() {
 
           {/* Pending Artists */}
           {isLoading ? (
-            <div style={{
-              textAlign: 'center',
-              color: 'white',
-              fontSize: '1.2rem',
-              padding: '4rem'
-            }}>
+            <div className="text-center text-white text-lg lg:text-xl py-16">
               Loading applications... 🎨
             </div>
           ) : pendingArtists.length === 0 ? (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '4rem',
-              textAlign: 'center',
-              color: 'white'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✨</div>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>All caught up!</h2>
-              <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-8 lg:p-16 text-center text-white">
+              <div className="text-4xl lg:text-5xl mb-4 lg:mb-6">✨</div>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">All caught up!</h2>
+              <p className="text-white/80 text-sm sm:text-base lg:text-lg">
                 No pending artist applications at the moment.
               </p>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gap: '1.5rem'
-            }}>
+            <div className="space-y-4 lg:space-y-6">
               {pendingArtists.map((artist) => (
                 <div
                   key={artist.id}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '20px',
-                    padding: '2rem',
-                    transition: 'transform 0.3s ease'
-                  }}
+                  className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-8 transition-transform hover:-translate-y-1"
                 >
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 2fr 1fr',
-                    gap: '2rem',
-                    alignItems: 'start'
-                  }}>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
                     
                     {/* Artist Info */}
-                    <div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        marginBottom: '1rem'
-                      }}>
+                    <div className="lg:col-span-3">
+                      <div className="flex items-center gap-3 lg:gap-4 mb-3 lg:mb-4">
                         <img
                           src={artist.pfpUrl}
                           alt={artist.displayName}
-                          style={{
-                            width: '60px',
-                            height: '60px',
-                            borderRadius: '50%',
-                            border: '3px solid rgba(255, 255, 255, 0.3)'
-                          }}
+                          className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full border-2 lg:border-3 border-white/30"
                         />
-                        <div>
-                          <h3 style={{
-                            color: 'white',
-                            fontSize: '1.3rem',
-                            fontWeight: '700',
-                            marginBottom: '0.25rem'
-                          }}>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-white text-base sm:text-lg lg:text-xl font-bold mb-1 truncate">
                             {artist.displayName}
                           </h3>
-                          <p style={{
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            fontSize: '1rem'
-                          }}>
+                          <p className="text-white/70 text-sm sm:text-base truncate">
                             @{artist.username}
                           </p>
                         </div>
                       </div>
                       
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontSize: '0.9rem'
-                      }}>
+                      <div className="text-white/60 text-xs sm:text-sm mb-2">
                         Applied: {new Date(artist.createdAt).toLocaleDateString()}
                       </div>
                       
                       {artist.referredBy && (
-                        <div style={{
-                          background: 'rgba(34, 197, 94, 0.2)',
-                          border: '1px solid rgba(34, 197, 94, 0.5)',
-                          borderRadius: '12px',
-                          padding: '0.5rem',
-                          marginTop: '0.5rem',
-                          fontSize: '0.9rem',
-                          color: 'rgb(34, 197, 94)'
-                        }}>
+                        <div className="bg-green-500/20 border border-green-500/50 rounded-xl px-2 py-1 text-xs sm:text-sm text-green-400 font-medium">
                           ✅ Referred by @{artist.referredBy.username}
                         </div>
                       )}
                     </div>
 
                     {/* Application Details */}
-                    <div>
+                    <div className="lg:col-span-6">
                       {artist.bio && (
-                        <div style={{ marginBottom: '1rem' }}>
-                          <h4 style={{
-                            color: 'white',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            marginBottom: '0.5rem'
-                          }}>
+                        <div className="mb-4 lg:mb-6">
+                          <h4 className="text-white text-sm sm:text-base lg:text-lg font-semibold mb-2">
                             Bio:
                           </h4>
-                          <p style={{
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontSize: '0.95rem',
-                            lineHeight: '1.5'
-                          }}>
+                          <p className="text-white/80 text-sm sm:text-base leading-relaxed">
                             {artist.bio}
                           </p>
                         </div>
@@ -399,22 +236,10 @@ export default function AdminPage() {
                       
                       {artist.verificationNotes && (
                         <div>
-                          <h4 style={{
-                            color: 'white',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            marginBottom: '0.5rem'
-                          }}>
+                          <h4 className="text-white text-sm sm:text-base lg:text-lg font-semibold mb-2">
                             Application Message:
                           </h4>
-                          <p style={{
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontSize: '0.95rem',
-                            lineHeight: '1.5',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            padding: '1rem',
-                            borderRadius: '8px'
-                          }}>
+                          <p className="text-white/80 text-sm sm:text-base leading-relaxed bg-white/5 p-3 lg:p-4 rounded-xl">
                             {artist.verificationNotes}
                           </p>
                         </div>
@@ -422,47 +247,27 @@ export default function AdminPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '1rem'
-                    }}>
+                    <div className="lg:col-span-3 flex flex-row lg:flex-col gap-2 lg:gap-3">
                       <button
                         onClick={() => handleApprovalWithNotes(artist.id, true)}
                         disabled={processing[artist.id]}
-                        style={{
-                          background: processing[artist.id] 
-                            ? 'rgba(34, 197, 94, 0.3)' 
-                            : 'linear-gradient(45deg, #22c55e 0%, #16a34a 100%)',
-                          border: 'none',
-                          borderRadius: '12px',
-                          padding: '1rem',
-                          color: 'white',
-                          fontSize: '1rem',
-                          fontWeight: '600',
-                          cursor: processing[artist.id] ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.3s ease'
-                        }}
+                        className={`flex-1 lg:flex-none px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-semibold transition-all ${
+                          processing[artist.id]
+                            ? 'bg-green-500/30 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:scale-105 cursor-pointer'
+                        }`}
                       >
-                        {processing[artist.id] ? '⏳ Approving...' : '✅ Approve Artist'}
+                        {processing[artist.id] ? '⏳ Approving...' : '✅ Approve'}
                       </button>
                       
                       <button
                         onClick={() => handleApprovalWithNotes(artist.id, false)}
                         disabled={processing[artist.id]}
-                        style={{
-                          background: processing[artist.id] 
-                            ? 'rgba(239, 68, 68, 0.3)' 
-                            : 'linear-gradient(45deg, #ef4444 0%, #dc2626 100%)',
-                          border: 'none',
-                          borderRadius: '12px',
-                          padding: '1rem',
-                          color: 'white',
-                          fontSize: '1rem',
-                          fontWeight: '600',
-                          cursor: processing[artist.id] ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.3s ease'
-                        }}
+                        className={`flex-1 lg:flex-none px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-semibold transition-all ${
+                          processing[artist.id]
+                            ? 'bg-red-500/30 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:scale-105 cursor-pointer'
+                        }`}
                       >
                         {processing[artist.id] ? '⏳ Rejecting...' : '❌ Reject'}
                       </button>
@@ -471,18 +276,7 @@ export default function AdminPage() {
                         href={`https://warpcast.com/${artist.username}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.2)',
-                          border: '1px solid rgba(255, 255, 255, 0.3)',
-                          borderRadius: '12px',
-                          padding: '0.75rem',
-                          color: 'white',
-                          textDecoration: 'none',
-                          fontSize: '0.9rem',
-                          fontWeight: '500',
-                          textAlign: 'center',
-                          transition: 'all 0.3s ease'
-                        }}
+                        className="flex-1 lg:flex-none bg-white/10 border border-white/20 rounded-xl px-3 lg:px-4 py-2 lg:py-3 text-white no-underline text-xs sm:text-sm lg:text-base font-medium text-center transition-all hover:bg-white/20 hover:scale-105"
                       >
                         🔍 View Profile
                       </a>

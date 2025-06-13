@@ -16,330 +16,110 @@ export default function HomePage() {
   }, [isAuthenticated, profile, router]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 font-sans">
       {/* Header */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '2rem 3rem',
-        position: 'relative'
-      }}>
-        <div style={{
-          fontSize: '1.5rem',
-          fontWeight: '700',
-          color: 'white'
-        }}>
+      <header className="flex flex-col sm:flex-row justify-between items-center p-4 sm:p-6 lg:p-12 gap-4">
+        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
           Art Claps
         </div>
         
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center'
-        }}>
+        <div className="flex justify-center">
           <SignInButton />
         </div>
       </header>
 
       {/* Main Content */}
-      <main style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '4rem 2rem',
-        textAlign: 'center',
-        maxWidth: '1400px',
-        margin: '0 auto'
-      }}>
+      <main className="flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-16 text-center max-w-7xl mx-auto">
         
         {/* Hero Section */}
-        <div style={{ marginBottom: '6rem' }}>
-          <h1 style={{
-            fontSize: 'clamp(3rem, 8vw, 6rem)',
-            fontWeight: '800',
-            marginBottom: '2rem',
-            lineHeight: '1.1',
-            letterSpacing: '-0.02em'
-          }}>
-            <span style={{
-              background: 'linear-gradient(90deg, #fff 0%, #fff 40%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'white'
-            }}>
+        <div className="mb-12 lg:mb-24">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 lg:mb-8 leading-tight tracking-tight">
+            <span className="text-white block mb-2">
               Support Artists.
             </span>
-            <br />
-            <span style={{
-              background: 'linear-gradient(90deg, #ffd700 0%, #ff6b6b 20%, #4ecdc4 40%, #45b7d1 60%, #96ceb4 80%, #f093fb 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              display: 'inline-block'
-            }}>
+            <span className="bg-gradient-to-r from-yellow-400 via-red-500 via-teal-400 via-blue-500 via-green-400 to-pink-500 bg-clip-text text-transparent inline-block">
               Earn Rewards.
             </span>
           </h1>
           
-          <p style={{
-            fontSize: '1.3rem',
-            color: 'rgba(255, 255, 255, 0.9)',
-            maxWidth: '700px',
-            margin: '0 auto',
-            lineHeight: '1.6',
-            fontWeight: '400'
-          }}>
+          <p className="text-lg sm:text-xl lg:text-2xl text-white/90 max-w-2xl lg:max-w-4xl mx-auto leading-relaxed font-normal px-4">
             The SocialFi platform where supporting Farcaster artists earns you points, builds community, and rewards authentic engagement.
           </p>
         </div>
 
         {/* Feature Cards Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '2rem',
-          width: '100%',
-          maxWidth: '900px',
-          marginBottom: '4rem'
-        }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-8 w-full max-w-5xl mb-12 lg:mb-16">
           
           {/* Clap to Earn */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            textAlign: 'center',
-            transition: 'transform 0.3s ease, background 0.3s ease',
-            cursor: 'pointer'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-8px)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}>
-            <div style={{ 
-              fontSize: '3rem', 
-              marginBottom: '1.5rem',
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-            }}>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-6 lg:p-10 text-center transition-all duration-300 hover:-translate-y-2 hover:bg-white/15 cursor-pointer">
+            <div className="text-4xl lg:text-5xl mb-4 lg:mb-6 drop-shadow-lg">
               👏
             </div>
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              marginBottom: '1rem'
-            }}>
+            <h3 className="text-white text-xl lg:text-2xl font-bold mb-3 lg:mb-4">
               Clap to Earn
             </h3>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1rem',
-              lineHeight: '1.5'
-            }}>
+            <p className="text-white/80 text-sm lg:text-base leading-relaxed">
               Support artists and earn points for genuine engagement
             </p>
           </div>
 
           {/* Discover Artists */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            textAlign: 'center',
-            transition: 'transform 0.3s ease, background 0.3s ease',
-            cursor: 'pointer'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-8px)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}>
-            <div style={{ 
-              fontSize: '3rem', 
-              marginBottom: '1.5rem',
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-            }}>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-6 lg:p-10 text-center transition-all duration-300 hover:-translate-y-2 hover:bg-white/15 cursor-pointer">
+            <div className="text-4xl lg:text-5xl mb-4 lg:mb-6 drop-shadow-lg">
               🎨
             </div>
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              marginBottom: '1rem'
-            }}>
+            <h3 className="text-white text-xl lg:text-2xl font-bold mb-3 lg:mb-4">
               Discover Artists
             </h3>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1rem',
-              lineHeight: '1.5'
-            }}>
+            <p className="text-white/80 text-sm lg:text-base leading-relaxed">
               Find and connect with amazing creators on Farcaster
             </p>
           </div>
 
           {/* Build Reputation */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            textAlign: 'center',
-            transition: 'transform 0.3s ease, background 0.3s ease',
-            cursor: 'pointer'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-8px)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}>
-            <div style={{ 
-              fontSize: '3rem', 
-              marginBottom: '1.5rem',
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-            }}>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-6 lg:p-10 text-center transition-all duration-300 hover:-translate-y-2 hover:bg-white/15 cursor-pointer">
+            <div className="text-4xl lg:text-5xl mb-4 lg:mb-6 drop-shadow-lg">
               🏆
             </div>
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              marginBottom: '1rem'
-            }}>
+            <h3 className="text-white text-xl lg:text-2xl font-bold mb-3 lg:mb-4">
               Build Reputation
             </h3>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1rem',
-              lineHeight: '1.5'
-            }}>
+            <p className="text-white/80 text-sm lg:text-base leading-relaxed">
               Climb the leaderboard as a true community supporter
             </p>
           </div>
 
           {/* Unlock Rewards */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            textAlign: 'center',
-            transition: 'transform 0.3s ease, background 0.3s ease',
-            cursor: 'pointer'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-8px)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}>
-            <div style={{ 
-              fontSize: '3rem', 
-              marginBottom: '1.5rem',
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-            }}>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-6 lg:p-10 text-center transition-all duration-300 hover:-translate-y-2 hover:bg-white/15 cursor-pointer">
+            <div className="text-4xl lg:text-5xl mb-4 lg:mb-6 drop-shadow-lg">
               💎
             </div>
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              marginBottom: '1rem'
-            }}>
+            <h3 className="text-white text-xl lg:text-2xl font-bold mb-3 lg:mb-4">
               Unlock Rewards
             </h3>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1rem',
-              lineHeight: '1.5'
-            }}>
+            <p className="text-white/80 text-sm lg:text-base leading-relaxed">
               Redeem points for exclusive artist collaborations
             </p>
           </div>
         </div>
 
         {/* CTA Section */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '24px',
-          padding: '3rem 2rem',
-          textAlign: 'center',
-          maxWidth: '600px',
-          width: '100%'
-        }}>
-          <h2 style={{
-            color: 'white',
-            fontSize: '2rem',
-            fontWeight: '700',
-            marginBottom: '1rem'
-          }}>
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-6 lg:p-12 text-center max-w-2xl w-full mx-4">
+          <h2 className="text-white text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 lg:mb-6">
             Ready to start supporting artists?
           </h2>
           
-          <p style={{
-            color: 'rgba(255, 255, 255, 0.8)',
-            fontSize: '1.1rem',
-            marginBottom: '2rem',
-            lineHeight: '1.6'
-          }}>
+          <p className="text-white/80 text-base sm:text-lg lg:text-xl mb-6 lg:mb-8 leading-relaxed px-2">
             Connect your Farcaster account to join the Art Claps community and start earning rewards for authentic engagement.
           </p>
 
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-            alignItems: 'center'
-          }}>
+          <div className="flex flex-col gap-4 lg:gap-6 items-center">
             <SignInButton />
             
             {/* Apply to Become Artist Button */}
             <a 
               href="/apply"
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '12px',
-                padding: '1rem 2rem',
-                color: 'white',
-                textDecoration: 'none',
-                fontSize: '1rem',
-                fontWeight: '500',
-                transition: 'all 0.3s ease',
-                display: 'inline-block'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              }}
+              className="bg-white/20 border border-white/30 rounded-xl px-4 sm:px-6 lg:px-8 py-3 lg:py-4 text-white no-underline text-sm sm:text-base lg:text-lg font-medium transition-all duration-300 hover:bg-white/30 hover:scale-105 inline-block"
             >
               🎨 Apply to Become Artist
             </a>
@@ -347,12 +127,7 @@ export default function HomePage() {
         </div>
 
         {/* Footer */}
-        <div style={{
-          marginTop: '4rem',
-          fontSize: '0.9rem',
-          color: 'rgba(255, 255, 255, 0.6)',
-          textAlign: 'center'
-        }}>
+        <div className="mt-8 lg:mt-16 text-sm lg:text-base text-white/60 text-center px-4">
           🚀 Now in beta • Building the future of artist support on Farcaster
         </div>
       </main>

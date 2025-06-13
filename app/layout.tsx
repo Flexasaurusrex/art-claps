@@ -49,16 +49,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Update user when profile changes
   useEffect(() => {
-    if (profile) {
+    if (profile && profile.fid && profile.username) {
       const userData: User = {
         fid: profile.fid,
         username: profile.username,
-        displayName: profile.displayName,
-        pfpUrl: profile.pfpUrl,
-        bio: profile.bio,
-        followerCount: profile.followerCount,
-        followingCount: profile.followingCount,
-        verifications: profile.verifications,
+        displayName: profile.displayName || '',
+        pfpUrl: profile.pfpUrl || '',
+        bio: profile.bio || '',
+        followerCount: profile.followerCount || 0,
+        followingCount: profile.followingCount || 0,
+        verifications: profile.verifications || [],
       }
       setUser(userData)
       localStorage.setItem('art-claps-user', JSON.stringify(userData))

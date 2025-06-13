@@ -1,73 +1,98 @@
-import './globals.css'
-import { Inter } from 'next/font/google'
-import { Providers } from './providers'  // FIXED: Named import instead of default
-import type { Metadata } from 'next'
+'use client'
 
-const inter = Inter({ subsets: ['latin'] })
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useProfile } from '@farcaster/auth-kit'
 
-export const metadata: Metadata = {
-  title: 'Art Claps - SocialFi for Farcaster Creators',
-  description: 'Support amazing Farcaster artists, earn CLAPS points, and climb the leaderboard. The premier SocialFi platform for creator discovery and rewards.',
-  
-  // Open Graph
-  openGraph: {
-    title: 'Art Claps - SocialFi for Farcaster Creators',
-    description: 'Discover amazing artists, earn CLAPS points, and compete on the leaderboard. Join the hottest creator economy on Farcaster!',
-    url: 'https://art-claps.vercel.app',
-    siteName: 'Art Claps',
-    locale: 'en_US',
-    type: 'website',
-    images: [
-      {
-        url: 'https://art-claps.vercel.app/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Art Claps - SocialFi Platform for Farcaster Creators',
-      },
-    ],
-  },
-  // Twitter
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Art Claps - SocialFi for Farcaster Creators',
-    description: 'Discover artists, earn CLAPS points, climb the leaderboard! The hottest creator economy on Farcaster',
-    images: ['https://art-claps.vercel.app/og-image.png'],
-  },
-  // Basic Meta
-  keywords: ['Farcaster', 'SocialFi', 'NFT', 'creators', 'artists', 'crypto'],
-  authors: [{ name: 'Art Claps' }],
-  creator: 'Art Claps',
-  
-  // Icons
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  },
-  // Manifest
-  manifest: '/site.webmanifest',
-  // Other
-  robots: {
-    index: true,
-    follow: true,
-  },
-  
-  // Theme
-  themeColor: '#8b5cf6',
+interface User {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  bio: string
+  followerCount: number
+  followingCount: number
+  verifications: string[]
+  artistStatus?: string
+  totalPoints?: number
+  weeklyPoints?: number
+  monthlyPoints?: number
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+interface AuthContextType {
+  user: User | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  setUser: (user: User | null) => void
+  logout: () => void
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { profile } = useProfile()
+
+  // Check for persisted user on mount
+  useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('art-claps-user')
+      if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      }
+    } catch (error) {
+      console.error('Error loading stored user:', error)
+      localStorage.removeItem('art-claps-user')
+    }
+    setIsLoading(false)
+  }, [])
+
+  // Update user when profile changes
+  useEffect(() => {
+    if (profile) {
+      const userData: User = {
+        fid: profile.fid,
+        username: profile.username,
+        displayName: profile.displayName,
+        pfpUrl: profile.pfpUrl,
+        bio: profile.bio,
+        followerCount: profile.followerCount,
+        followingCount: profile.followingCount,
+        verifications: profile.verifications,
+      }
+      setUser(userData)
+      localStorage.setItem('art-claps-user', JSON.stringify(userData))
+    } else if (!isLoading) {
+      // Only clear user if we're not loading (to avoid clearing on page refresh)
+      setUser(null)
+      localStorage.removeItem('art-claps-user')
+    }
+  }, [profile, isLoading])
+
+  const logout = () => {
+    setUser(null)
+    localStorage.removeItem('art-claps-user')
+  }
+
+  const value: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    setUser,
+    logout,
+  }
+
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Providers>
-          {children}
-        </Providers>
-      </body>
-    </html>
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }

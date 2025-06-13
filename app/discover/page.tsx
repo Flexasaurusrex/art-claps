@@ -75,7 +75,9 @@ export default function DiscoverPage() {
       isAuthenticated, 
       profileUsername: profile?.username,
       profileFid: profile?.fid,
-      authLoading
+      authLoading,
+      hasProfile: !!profile,
+      profileKeys: profile ? Object.keys(profile) : 'no profile'
     });
   }, [isAuthenticated, profile, authLoading]);
 
@@ -85,6 +87,12 @@ export default function DiscoverPage() {
   }, []);
 
   const initializeUser = async () => {
+    if (!profile?.fid) {
+      console.log('No profile.fid available, skipping initializeUser');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       // Register/update user in database
       await fetch('/api/user', {
@@ -155,6 +163,11 @@ export default function DiscoverPage() {
   };
 
   const fetchUserStats = async () => {
+    if (!profile?.fid) {
+      console.log('No profile.fid available, skipping fetchUserStats');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/user?fid=${profile.fid}`);
       const data = await response.json();
@@ -183,6 +196,11 @@ export default function DiscoverPage() {
   };
 
   const fetchArtists = async () => {
+    if (!profile?.fid) {
+      console.log('No profile.fid available, skipping fetchArtists');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/artists?limit=20&currentUserFid=${profile.fid}`);
       const data = await response.json();

@@ -241,80 +241,6 @@ export default function DiscoverPage() {
     }
   };
 
-  const ProfileDropdown = () => (
-    <div
-      ref={dropdownRef}
-      className="absolute top-full right-0 mt-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
-    >
-      {/* User Info Header */}
-      <div className="border-b border-white/20 pb-4 mb-4">
-        <div className="text-white font-semibold mb-1">
-          {profile?.displayName}
-        </div>
-        <div className="text-white/70 text-sm mb-2">
-          @{profile?.username}
-        </div>
-        <div className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold border ${
-          userRole === 'admin' 
-            ? 'bg-red-500/20 border-red-500/50 text-red-400' 
-            : userRole === 'verified_artist'
-            ? 'bg-green-500/20 border-green-500/50 text-green-400'
-            : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-        }`}>
-          {userRole === 'admin' ? '👑 Admin' : 
-           userRole === 'verified_artist' ? '✓ Verified Artist' : 
-           '💎 Supporter'}
-        </div>
-      </div>
-
-      {/* Navigation Links */}
-      <div className="space-y-2">
-        
-        {/* Admin Panel - Only for admins */}
-        {userRole === 'admin' && (
-          <button
-            onClick={() => router.push('/admin')}
-            className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-          >
-            <span>👑</span>
-            <span>Admin Panel</span>
-          </button>
-        )}
-
-        {/* Referral Codes */}
-        <button
-          onClick={() => router.push('/referral-codes')}
-          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-        >
-          <span>🎟️</span>
-          <span>Referral Codes</span>
-        </button>
-
-        <div className="h-px bg-white/20 my-2" />
-
-        {/* Home */}
-        <button
-          onClick={() => router.push('/')}
-          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-        >
-          <span>🏠</span>
-          <span>Home</span>
-        </button>
-
-        {/* Sign Out */}
-        <button
-          onClick={() => {
-            window.location.href = '/';
-          }}
-          className="flex items-center gap-3 text-white/80 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-        >
-          <span>🚪</span>
-          <span>Sign Out</span>
-        </button>
-      </div>
-    </div>
-  );
-
   // Loading state
   if (isLoading) {
     return (
@@ -402,7 +328,79 @@ export default function DiscoverPage() {
             </div>
 
             {/* Dropdown Menu */}
-            {showProfileDropdown && <ProfileDropdown />}
+            {showProfileDropdown && (
+              <div
+                ref={dropdownRef}
+                className="absolute top-full right-0 mt-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
+              >
+                {/* User Info Header */}
+                <div className="border-b border-white/20 pb-4 mb-4">
+                  <div className="text-white font-semibold mb-1">
+                    {profile?.displayName}
+                  </div>
+                  <div className="text-white/70 text-sm mb-2">
+                    @{profile?.username}
+                  </div>
+                  <div className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold border ${
+                    userRole === 'admin' 
+                      ? 'bg-red-500/20 border-red-500/50 text-red-400' 
+                      : userRole === 'verified_artist'
+                      ? 'bg-green-500/20 border-green-500/50 text-green-400'
+                      : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                  }`}>
+                    {userRole === 'admin' ? '👑 Admin' : 
+                     userRole === 'verified_artist' ? '✓ Verified Artist' : 
+                     '💎 Supporter'}
+                  </div>
+                </div>
+
+                {/* Navigation Links */}
+                <div className="space-y-2">
+                  
+                  {/* Admin Panel - Only for admins */}
+                  {userRole === 'admin' && (
+                    <button
+                      onClick={() => router.push('/admin')}
+                      className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                    >
+                      <span>👑</span>
+                      <span>Admin Panel</span>
+                    </button>
+                  )}
+
+                  {/* Referral Codes */}
+                  <button
+                    onClick={() => router.push('/referral-codes')}
+                    className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                  >
+                    <span>🎟️</span>
+                    <span>Referral Codes</span>
+                  </button>
+
+                  <div className="h-px bg-white/20 my-2" />
+
+                  {/* Home */}
+                  <button
+                    onClick={() => router.push('/')}
+                    className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                  >
+                    <span>🏠</span>
+                    <span>Home</span>
+                  </button>
+
+                  {/* Sign Out */}
+                  <button
+                    onClick={() => {
+                      window.location.href = '/';
+                    }}
+                    className="flex items-center gap-3 text-white/80 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                  >
+                    <span>🚪</span>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>

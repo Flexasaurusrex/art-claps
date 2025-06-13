@@ -1,115 +1,80 @@
-// Add these meta tags to your app/layout.tsx <head> section
+import './globals.css'
+import { Inter } from 'next/font/google'
+import Providers from './providers'
+import type { Metadata } from 'next'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Art Claps - SocialFi for Farcaster Creators',
   description: 'Support amazing Farcaster artists, earn CLAPS points, and climb the leaderboard. The premier SocialFi platform for creator discovery and rewards.',
-  keywords: 'Farcaster, SocialFi, NFT, creators, artists, crypto, social media, claps, leaderboard',
-  authors: [{ name: 'Art Claps' }],
-  creator: 'Art Claps',
-  publisher: 'Art Claps',
   
-  // Open Graph (Facebook, LinkedIn, WhatsApp)
+  // Open Graph
   openGraph: {
-    title: '🎨 Art Claps - SocialFi for Farcaster Creators',
-    description: 'Discover amazing artists, earn CLAPS points, and compete on the leaderboard. Join the hottest creator economy on Farcaster! 🔥',
+    title: 'Art Claps - SocialFi for Farcaster Creators',
+    description: 'Discover amazing artists, earn CLAPS points, and compete on the leaderboard. Join the hottest creator economy on Farcaster!',
     url: 'https://art-claps.vercel.app',
     siteName: 'Art Claps',
     locale: 'en_US',
     type: 'website',
     images: [
       {
-        url: 'https://art-claps.vercel.app/og-image.png', // We'll create this
+        url: 'https://art-claps.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Art Claps - SocialFi Platform for Farcaster Creators',
-        type: 'image/png',
       },
     ],
   },
 
-  // Twitter Cards
+  // Twitter
   twitter: {
     card: 'summary_large_image',
-    title: '🎨 Art Claps - SocialFi for Farcaster Creators',
-    description: 'Discover artists, earn CLAPS points, climb the leaderboard! The hottest creator economy on Farcaster 🔥👏',
-    site: '@artclaps', // Add your Twitter handle
-    creator: '@artclaps',
-    images: [
-      {
-        url: 'https://art-claps.vercel.app/twitter-image.png', // We'll create this
-        width: 1200,
-        height: 600,
-        alt: 'Art Claps - SocialFi Platform',
-      },
-    ],
+    title: 'Art Claps - SocialFi for Farcaster Creators',
+    description: 'Discover artists, earn CLAPS points, climb the leaderboard! The hottest creator economy on Farcaster',
+    images: ['https://art-claps.vercel.app/og-image.png'],
   },
 
-  // Additional Meta Tags
+  // Basic Meta
+  keywords: ['Farcaster', 'SocialFi', 'NFT', 'creators', 'artists', 'crypto'],
+  authors: [{ name: 'Art Claps' }],
+  creator: 'Art Claps',
+  
+  // Icons
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
+
+  // Manifest
+  manifest: '/site.webmanifest',
+
+  // Other
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
   },
-
-  // Icons and Favicon
-  icons: {
-    icon: [
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.ico', sizes: 'any' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-    other: [
-      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
-    ],
-  },
-
-  // Manifest for PWA
-  manifest: '/site.webmanifest',
-
-  // Additional SEO
-  category: 'SocialFi',
-  classification: 'Social Media Platform',
-  referrer: 'origin-when-cross-origin',
+  
+  // Theme
+  themeColor: '#8b5cf6',
 }
 
-// Also add these additional meta tags in the <head> if needed
-const additionalMetaTags = `
-  <!-- Additional Social Media Meta Tags -->
-  <meta property="fb:app_id" content="YOUR_FACEBOOK_APP_ID" />
-  <meta name="theme-color" content="#8B5CF6" />
-  <meta name="msapplication-TileColor" content="#8B5CF6" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  
-  <!-- Rich Snippets -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Art Claps",
-    "description": "SocialFi platform for Farcaster creators to earn CLAPS points and build community",
-    "url": "https://art-claps.vercel.app",
-    "applicationCategory": "SocialNetworkingApplication",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    },
-    "author": {
-      "@type": "Organization",
-      "name": "Art Claps"
-    }
-  }
-  </script>
-`;
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <meta name="theme-color" content="#8b5cf6" />
+      </head>
+      <body className={inter.className}>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
+    </html>
+  )
+}

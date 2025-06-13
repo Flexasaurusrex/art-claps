@@ -281,17 +281,6 @@ export default function DiscoverPage() {
           <span>Referral Codes</span>
         </button>
 
-        {/* Apply to be Artist - Only for supporters */}
-        {userRole === 'supporter' && (
-          <button
-            onClick={() => router.push('/apply')}
-            className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
-          >
-            <span>🎨</span>
-            <span>Apply to be Artist</span>
-          </button>
-        )}
-
         <div className="h-px bg-white/20 my-2" />
 
         {/* Home */}
@@ -445,6 +434,29 @@ export default function DiscoverPage() {
               )}
             </button>
           </div>
+
+          {/* Apply to be Artist CTA - Only show for supporters */}
+          {userRole === 'supporter' && (
+            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-xl border border-yellow-500/30 rounded-2xl lg:rounded-3xl p-6 lg:p-8 mb-8 lg:mb-12 text-center">
+              <div className="text-4xl lg:text-5xl mb-4">🎨</div>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4">
+                Are you an artist?
+              </h2>
+              <p className="text-white/80 text-sm sm:text-base lg:text-lg mb-6 max-w-2xl mx-auto leading-relaxed">
+                Join our community of verified Farcaster artists and get discovered by supporters who want to help you grow.
+              </p>
+              <button
+                onClick={() => router.push('/apply')}
+                className="inline-flex items-center gap-2 lg:gap-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 hover:scale-105 text-sm sm:text-base lg:text-lg border-none cursor-pointer shadow-lg"
+              >
+                <span>🎯</span>
+                <span>Apply to be a Verified Artist</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
+            </div>
+          )}
 
           {/* Sync Message */}
           {syncMessage && (

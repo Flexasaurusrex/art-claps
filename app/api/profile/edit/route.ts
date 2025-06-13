@@ -7,10 +7,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+interface ArtistLink {
+  label: string;
+  url: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fid, extendedBio, artistLinks } = body;
+    const { fid, extendedBio, artistLinks }: { 
+      fid: number; 
+      extendedBio?: string; 
+      artistLinks?: ArtistLink[] 
+    } = body;
 
     if (!fid) {
       return NextResponse.json(
@@ -29,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Validate each link has required fields
     if (artistLinks) {
-      for (const link of artistLinks) {
+      for (const link of artistLinks as ArtistLink[]) {
         if (!link.label || !link.url) {
           return NextResponse.json(
             { success: false, error: 'Each link must have a label and URL' }, 
@@ -64,14 +73,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user profile
-    const updateData: any = {};
+    const updateData: {
+      extendedBio?: string;
+      artistLinks?: ArtistLink[];
+    } = {};
     
     if (extendedBio !== undefined) {
       updateData.extendedBio = extendedBio.trim();
     }
     
     if (artistLinks !== undefined) {
-      updateData.artistLinks = artistLinks.filter(link => 
+      updateData.artistLinks = artistLinks.filter((link: ArtistLink) => 
         link.label && link.label.trim() && link.url && link.url.trim()
       );
     }

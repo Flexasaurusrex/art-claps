@@ -22,12 +22,23 @@ interface Artist {
   extendedBio?: string;
 }
 
+interface UserStats {
+  totalPoints: number;
+  weeklyPoints: number;
+  monthlyPoints: number;
+  supportGiven: number;
+  supportReceived: number;
+}
+
 export default function ArtistProfilePage() {
   const { isAuthenticated, profile } = useProfile();
   const params = useParams();
   const router = useRouter();
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clapping, setClapping] = useState(false);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [alreadyClappedToday, setAlreadyClappedToday] = useState(false);
 
   const username = params.username as string;
 
@@ -36,6 +47,13 @@ export default function ArtistProfilePage() {
       fetchArtistProfile();
     }
   }, [username]);
+
+  // Fetch user stats when authenticated
+  useEffect(() => {
+    if (isAuthenticated && profile) {
+      fetchUserStats();
+    }
+  }, [isAuthenticated, profile]);
 
   // Check auth status and try to persist
   useEffect(() => {
@@ -53,13 +71,35 @@ export default function ArtistProfilePage() {
     checkAuth();
   }, [isAuthenticated]);
 
+  const fetchUserStats = async () => {
+    try {
+      const response = await fetch(`/api/user?fid=${profile.fid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setUserStats({
+          totalPoints: data.user.totalPoints,
+          weeklyPoints: data.user.weeklyPoints,
+          monthlyPoints: data.user.monthlyPoints,
+          supportGiven: data.user.supportGiven,
+          supportReceived: data.user.supportReceived
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
   const fetchArtistProfile = async () => {
     try {
-      const response = await fetch(`/api/artist?username=${username}`);
+      const currentUserFid = profile?.fid || '';
+      const response = await fetch(`/api/artist?username=${username}&currentUserFid=${currentUserFid}`);
       const data = await response.json();
       
       if (data.success) {
         setArtist(data.artist);
+        // Check if user already clapped today (if the API returns this info)
+        setAlreadyClappedToday(data.artist.alreadyClappedToday || false);
       } else {
         router.push('/discover');
       }
@@ -67,6 +107,59 @@ export default function ArtistProfilePage() {
       console.error('Error fetching artist profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClap = async () => {
+    if (!isAuthenticated || !profile || !artist || clapping) return;
+    
+    setClapping(true);
+    
+    try {
+      const response = await fetch('/api/clap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userFid: profile.fid,
+          targetFid: artist.farcasterFid
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local artist state
+        setArtist(prev => prev ? { 
+          ...prev, 
+          claps: prev.claps + 1,
+          supportReceived: prev.supportReceived + 1 
+        } : null);
+
+        // Update user stats
+        if (userStats) {
+          setUserStats(prev => prev ? {
+            ...prev,
+            totalPoints: data.newTotalPoints,
+            weeklyPoints: prev.weeklyPoints + 5,
+            monthlyPoints: prev.monthlyPoints + 5,
+            supportGiven: prev.supportGiven + 1
+          } : null);
+        }
+
+        // Mark as clapped today
+        setAlreadyClappedToday(true);
+
+        // Show success feedback
+        alert(`🎉 Clapped for ${artist.displayName}! +5 CLAPS points earned!`);
+
+      } else {
+        alert(data.error || 'Failed to record clap');
+      }
+    } catch (error) {
+      console.error('Error clapping:', error);
+      alert('Failed to record clap. Please try again.');
+    } finally {
+      setClapping(false);
     }
   };
 
@@ -190,17 +283,26 @@ export default function ArtistProfilePage() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 lg:mb-8">
           <button 
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 sm:py-4 px-6 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
-            onClick={() => {
-              // Add clapping functionality here
-              console.log('Clap for artist');
-            }}
+            onClick={handleClap}
+            disabled={clapping || alreadyClappedToday || !isAuthenticated}
+            className={`flex-1 font-semibold py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 text-sm sm:text-base border-none cursor-pointer ${
+              alreadyClappedToday
+                ? 'bg-green-500/30 text-green-300 cursor-not-allowed' 
+                : clapping
+                ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                : !isAuthenticated
+                ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+            }`}
           >
-            👏 Clap for {artist.displayName}
+            {clapping ? '👏 Clapping...' : 
+             alreadyClappedToday ? '✅ Clapped!' : 
+             !isAuthenticated ? '🔒 Sign in to Clap' :
+             `👏 Clap for ${artist.displayName} (+5)`}
           </button>
           
           <button 
-            className="flex-1 bg-white/10 border border-white/20 text-white font-medium py-3 sm:py-4 px-6 rounded-xl hover:bg-white/20 transition-all duration-300 text-sm sm:text-base"
+            className="flex-1 bg-white/10 border border-white/20 text-white font-medium py-3 sm:py-4 px-6 rounded-xl hover:bg-white/20 transition-all duration-300 text-sm sm:text-base cursor-pointer"
             onClick={() => {
               // Add follow functionality here
               console.log('Follow artist');
@@ -209,6 +311,47 @@ export default function ArtistProfilePage() {
             🔔 Follow Artist
           </button>
         </div>
+
+        {/* User Stats Display - Show when authenticated */}
+        {isAuthenticated && userStats && (
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-4 sm:p-6 mb-6 lg:mb-8">
+            <h3 className="text-white text-lg font-semibold mb-4 text-center">Your Stats</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-xl lg:text-2xl font-bold text-white">
+                  {userStats.totalPoints.toLocaleString()}
+                </div>
+                <div className="text-xs lg:text-sm text-white/60">
+                  Total CLAPS
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl lg:text-2xl font-bold text-white">
+                  {userStats.weeklyPoints}
+                </div>
+                <div className="text-xs lg:text-sm text-white/60">
+                  This Week
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl lg:text-2xl font-bold text-white">
+                  {userStats.supportGiven}
+                </div>
+                <div className="text-xs lg:text-sm text-white/60">
+                  Support Given
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl lg:text-2xl font-bold text-white">
+                  {userStats.supportReceived}
+                </div>
+                <div className="text-xs lg:text-sm text-white/60">
+                  Support Received
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Artist Links Section */}
         {artist.artistLinks && artist.artistLinks.length > 0 && (
@@ -255,7 +398,7 @@ export default function ArtistProfilePage() {
         <div className="text-center mt-8 lg:mt-12">
           <button
             onClick={() => router.push('/discover')}
-            className="bg-white/10 border border-white/20 text-white font-medium py-3 px-6 sm:px-8 rounded-xl hover:bg-white/20 transition-all duration-300 text-sm sm:text-base"
+            className="bg-white/10 border border-white/20 text-white font-medium py-3 px-6 sm:px-8 rounded-xl hover:bg-white/20 transition-all duration-300 text-sm sm:text-base cursor-pointer"
           >
             ← Discover More Artists
           </button>

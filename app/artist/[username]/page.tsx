@@ -43,6 +43,12 @@ export default function ArtistProfilePage() {
   const [alreadyClappedToday, setAlreadyClappedToday] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm, setEditForm] = useState({
+    extendedBio: '',
+    artistLinks: [] as any[]
+  });
 
   const username = params.username as string;
 
@@ -237,6 +243,96 @@ export default function ArtistProfilePage() {
     }
   };
 
+  // Check if user can edit this profile
+  const canEditProfile = () => {
+    if (!isAuthenticated || !profile || !artist) return false;
+    
+    // Admin can edit any profile
+    if (profile.fid === 7418) return true;
+    
+    // Users can edit their own profile
+    if (profile.fid === artist.farcasterFid) return true;
+    
+    // Verified artists can edit their own profile
+    if (profile.fid === artist.farcasterFid && artist.verifiedArtist) return true;
+    
+    return false;
+  };
+
+  const handleEditProfile = () => {
+    setEditForm({
+      extendedBio: artist?.extendedBio || artist?.bio || '',
+      artistLinks: artist?.artistLinks || []
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!artist || editLoading) return;
+    
+    setEditLoading(true);
+    
+    try {
+      const response = await fetch('/api/profile/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fid: artist.farcasterFid,
+          extendedBio: editForm.extendedBio,
+          artistLinks: editForm.artistLinks
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local artist state
+        setArtist(prev => prev ? {
+          ...prev,
+          extendedBio: editForm.extendedBio,
+          artistLinks: editForm.artistLinks
+        } : null);
+
+        setShowEditModal(false);
+        alert('🎉 Profile updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const addArtistLink = () => {
+    setEditForm(prev => ({
+      ...prev,
+      artistLinks: [...prev.artistLinks, { label: '', url: '' }]
+    }));
+  };
+
+  const updateArtistLink = (index: number, field: string, value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      artistLinks: prev.artistLinks.map((link, i) => 
+        i === index ? { ...link, [field]: value } : link
+      )
+    }));
+  };
+
+  const removeArtistLink = (index: number) => {
+    setEditForm(prev => ({
+      ...prev,
+      artistLinks: prev.artistLinks.filter((_, i) => i !== index)
+    }));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center px-4">
@@ -304,12 +400,29 @@ export default function ArtistProfilePage() {
 
             {/* Artist Info */}
             <div className="flex-1 text-center lg:text-left w-full">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-2 break-words">
-                {artist.displayName}
-              </h1>
-              <p className="text-lg sm:text-xl lg:text-2xl text-purple-200 mb-4 lg:mb-6">
-                @{artist.username}
-              </p>
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4 lg:mb-6">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-2 break-words">
+                    {artist.displayName}
+                  </h1>
+                  <p className="text-lg sm:text-xl lg:text-2xl text-purple-200 mb-4 lg:mb-6">
+                    @{artist.username}
+                  </p>
+                </div>
+                
+                {/* Edit Profile Button */}
+                {canEditProfile() && (
+                  <button
+                    onClick={handleEditProfile}
+                    className="bg-white/10 border border-white/20 text-white font-medium py-2 px-4 rounded-lg hover:bg-white/20 transition-all duration-300 text-sm flex items-center gap-2 self-center lg:self-start"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    </svg>
+                    Edit Profile
+                  </button>
+                )}
+              </div>
               
               <p className="text-white/80 text-sm sm:text-base lg:text-lg leading-relaxed mb-6 lg:mb-8 max-w-2xl mx-auto lg:mx-0">
                 {artist.extendedBio || artist.bio}
@@ -505,6 +618,104 @@ export default function ArtistProfilePage() {
           </button>
         </div>
       </main>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Edit Profile</h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Extended Bio */}
+              <div className="mb-6">
+                <label className="block text-white font-medium mb-2">Bio</label>
+                <textarea
+                  value={editForm.extendedBio}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, extendedBio: e.target.value }))}
+                  placeholder="Tell us about your art and creative journey..."
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:border-purple-400 resize-none"
+                  rows={4}
+                />
+              </div>
+
+              {/* Artist Links */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="block text-white font-medium">Artist Links</label>
+                  <button
+                    onClick={addArtistLink}
+                    className="bg-purple-500/20 border border-purple-500/50 text-purple-300 px-3 py-1 rounded-lg hover:bg-purple-500/30 transition-colors text-sm"
+                  >
+                    + Add Link
+                  </button>
+                </div>
+
+                {editForm.artistLinks.map((link, index) => (
+                  <div key={index} className="flex gap-3 mb-3">
+                    <input
+                      type="text"
+                      placeholder="Label (e.g., Portfolio)"
+                      value={link.label || ''}
+                      onChange={(e) => updateArtistLink(index, 'label', e.target.value)}
+                      className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+                    />
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={link.url || ''}
+                      onChange={(e) => updateArtistLink(index, 'url', e.target.value)}
+                      className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+                    />
+                    <button
+                      onClick={() => removeArtistLink(index)}
+                      className="text-red-400 hover:text-red-300 transition-colors p-2"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+
+                {editForm.artistLinks.length === 0 && (
+                  <p className="text-white/50 text-sm italic">No links added yet</p>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex gap-3 pt-4 border-t border-white/10">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 bg-white/10 border border-white/20 text-white font-medium py-3 px-6 rounded-xl hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={editLoading}
+                  className={`flex-1 font-medium py-3 px-6 rounded-xl transition-colors ${
+                    editLoading
+                      ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
+                  }`}
+                >
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

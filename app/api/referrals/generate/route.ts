@@ -1,7 +1,6 @@
 // app/api/referrals/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
 // Fix for dynamic server usage error
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +35,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.artistStatus !== 'verified_artist') {
+    // Allow both verified artists and admins (FID 7418)
+    const isAuthorized = user.artistStatus === 'verified_artist' || parseInt(userFid) === 7418;
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'Only verified artists can generate referral codes' },
         { status: 403 }

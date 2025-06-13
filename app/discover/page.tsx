@@ -235,62 +235,23 @@ export default function DiscoverPage() {
   const ProfileDropdown = () => (
     <div
       ref={dropdownRef}
-      style={{
-        position: 'absolute',
-        top: '100%',
-        right: '0',
-        marginTop: '0.5rem',
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '16px',
-        padding: '1rem',
-        minWidth: '200px',
-        zIndex: 50
-      }}
+      className="absolute top-full right-0 mt-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
     >
       {/* User Info Header */}
-      <div style={{
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        paddingBottom: '1rem',
-        marginBottom: '1rem'
-      }}>
-        <div style={{
-          color: 'white',
-          fontWeight: '600',
-          marginBottom: '0.25rem'
-        }}>
+      <div className="border-b border-white/20 pb-4 mb-4">
+        <div className="text-white font-semibold mb-1">
           {profile?.displayName}
         </div>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.7)',
-          fontSize: '0.9rem',
-          marginBottom: '0.5rem'
-        }}>
+        <div className="text-white/70 text-sm mb-2">
           @{profile?.username}
         </div>
-        <div style={{
-          display: 'inline-block',
-          background: userRole === 'admin' 
-            ? 'rgba(239, 68, 68, 0.2)' 
+        <div className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold border ${
+          userRole === 'admin' 
+            ? 'bg-red-500/20 border-red-500/50 text-red-400' 
             : userRole === 'verified_artist'
-            ? 'rgba(34, 197, 94, 0.2)'
-            : 'rgba(59, 130, 246, 0.2)',
-          border: `1px solid ${userRole === 'admin' 
-            ? 'rgba(239, 68, 68, 0.5)' 
-            : userRole === 'verified_artist'
-            ? 'rgba(34, 197, 94, 0.5)'
-            : 'rgba(59, 130, 246, 0.5)'}`,
-          borderRadius: '12px',
-          padding: '0.25rem 0.75rem',
-          fontSize: '0.8rem',
-          color: userRole === 'admin' 
-            ? 'rgb(239, 68, 68)' 
-            : userRole === 'verified_artist'
-            ? 'rgb(34, 197, 94)'
-            : 'rgb(59, 130, 246)',
-          fontWeight: '600'
-        }}>
+            ? 'bg-green-500/20 border-green-500/50 text-green-400'
+            : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+        }`}>
           {userRole === 'admin' ? '👑 Admin' : 
            userRole === 'verified_artist' ? '✓ Verified Artist' : 
            '💎 Supporter'}
@@ -298,63 +259,23 @@ export default function DiscoverPage() {
       </div>
 
       {/* Navigation Links */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div className="space-y-2">
         
         {/* Admin Panel - Only for admins */}
         {userRole === 'admin' && (
           <button
             onClick={() => router.push('/admin')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              color: 'white',
-              background: 'transparent',
-              border: 'none',
-              padding: '0.75rem',
-              borderRadius: '12px',
-              transition: 'background 0.2s ease',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
+            className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
           >
             <span>👑</span>
             <span>Admin Panel</span>
           </button>
         )}
 
-        {/* Referral Codes - Now available for all users */}
+        {/* Referral Codes */}
         <button
           onClick={() => router.push('/referral-codes')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            color: 'white',
-            background: 'transparent',
-            border: 'none',
-            padding: '0.75rem',
-            borderRadius: '12px',
-            transition: 'background 0.2s ease',
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            width: '100%',
-            textAlign: 'left'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
+          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
         >
           <span>🎟️</span>
           <span>Referral Codes</span>
@@ -364,63 +285,19 @@ export default function DiscoverPage() {
         {userRole === 'supporter' && (
           <button
             onClick={() => router.push('/apply')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              color: 'white',
-              background: 'transparent',
-              border: 'none',
-              padding: '0.75rem',
-              borderRadius: '12px',
-              transition: 'background 0.2s ease',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
+            className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
           >
             <span>🎨</span>
             <span>Apply to be Artist</span>
           </button>
         )}
 
-        <div style={{
-          height: '1px',
-          background: 'rgba(255, 255, 255, 0.2)',
-          margin: '0.5rem 0'
-        }} />
+        <div className="h-px bg-white/20 my-2" />
 
         {/* Home */}
         <button
           onClick={() => router.push('/')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            color: 'white',
-            background: 'transparent',
-            border: 'none',
-            padding: '0.75rem',
-            borderRadius: '12px',
-            transition: 'background 0.2s ease',
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            width: '100%',
-            textAlign: 'left'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
+          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
         >
           <span>🏠</span>
           <span>Home</span>
@@ -429,30 +306,9 @@ export default function DiscoverPage() {
         {/* Sign Out */}
         <button
           onClick={() => {
-            // Add sign out logic here if needed
             window.location.href = '/';
           }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            color: 'rgba(255, 255, 255, 0.8)',
-            background: 'transparent',
-            border: 'none',
-            padding: '0.75rem',
-            borderRadius: '12px',
-            transition: 'background 0.2s ease',
-            fontSize: '0.95rem',
-            cursor: 'pointer',
-            width: '100%',
-            textAlign: 'left'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'transparent';
-          }}
+          className="flex items-center gap-3 text-white/80 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
         >
           <span>🚪</span>
           <span>Sign Out</span>
@@ -464,15 +320,7 @@ export default function DiscoverPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem'
-      }}>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl px-4">
         Loading Art Claps... 🎨
       </div>
     );
@@ -481,31 +329,12 @@ export default function DiscoverPage() {
   // Not authenticated state
   if (!isAuthenticated || !profile) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem',
-        textAlign: 'center',
-        padding: '2rem'
-      }}>
-        <div style={{ marginBottom: '2rem' }}>🔐</div>
-        <div style={{ marginBottom: '2rem' }}>Please sign in to discover artists</div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center justify-center text-white text-center p-4">
+        <div className="text-4xl mb-8">🔐</div>
+        <div className="text-xl mb-8 max-w-md">Please sign in to discover artists</div>
         <a 
           href="/"
-          style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '12px',
-            padding: '1rem 2rem',
-            color: 'white',
-            textDecoration: 'none',
-            fontSize: '1rem'
-          }}
+          className="bg-white/20 border border-white/30 rounded-xl px-6 py-3 text-white no-underline hover:bg-white/30 transition-colors"
         >
           ← Back to Sign In
         </a>
@@ -514,52 +343,32 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 font-sans">
       {/* Header with User Stats */}
-      <header style={{
-        padding: '2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          color: 'white'
-        }}>
-          <a href="/" style={{ color: 'white', textDecoration: 'none' }}>
+      <header className="p-4 lg:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="text-2xl lg:text-3xl font-bold text-white">
+          <a href="/" className="text-white no-underline">
             Art Claps
           </a>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
           {/* User Stats Display */}
           {userStats && (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '12px',
-              padding: '1rem',
-              display: 'flex',
-              gap: '1rem',
-              alignItems: 'center'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>
+            <div className="bg-white/10 rounded-xl p-3 lg:p-4 flex gap-4 lg:gap-6 backdrop-blur-sm w-full sm:w-auto">
+              <div className="text-center">
+                <div className="text-lg lg:text-xl font-bold text-white">
                   {userStats.totalPoints.toLocaleString()}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                <div className="text-xs lg:text-sm text-white/70">
                   Total CLAPS
                 </div>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'white' }}>
+              <div className="text-center">
+                <div className="text-lg lg:text-xl font-bold text-white">
                   {userStats.weeklyPoints}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+                <div className="text-xs lg:text-sm text-white/70">
                   This Week
                 </div>
               </div>
@@ -567,40 +376,19 @@ export default function DiscoverPage() {
           )}
           
           {/* User Profile with Dropdown */}
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             <div 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '1rem',
-                cursor: 'pointer',
-                padding: '0.5rem',
-                borderRadius: '12px',
-                transition: 'background 0.2s ease'
-              }}
+              className="flex items-center gap-2 lg:gap-3 cursor-pointer p-2 rounded-xl transition-colors hover:bg-white/10"
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              }}
-              onMouseOut={(e) => {
-                if (!showProfileDropdown) {
-                  e.currentTarget.style.background = 'transparent';
-                }
-              }}
             >
               <img 
                 src={profile.pfpUrl} 
                 alt={profile.displayName}
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  border: '2px solid rgba(255, 255, 255, 0.3)'
-                }}
+                className="w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 border-white/30"
               />
-              <div style={{ color: 'white' }}>
-                <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
+              <div className="text-white hidden sm:block">
+                <div className="font-semibold text-sm lg:text-base">{profile.displayName}</div>
+                <div className="text-xs lg:text-sm opacity-80">@{profile.username}</div>
               </div>
               <svg
                 width="16"
@@ -609,10 +397,7 @@ export default function DiscoverPage() {
                 fill="none"
                 stroke="rgba(255,255,255,0.7)"
                 strokeWidth="2"
-                style={{
-                  transform: showProfileDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease'
-                }}
+                className={`transition-transform ${showProfileDropdown ? 'rotate-180' : 'rotate-0'}`}
               >
                 <polyline points="6,9 12,15 18,9"></polyline>
               </svg>
@@ -625,81 +410,37 @@ export default function DiscoverPage() {
       </header>
 
       {/* Main Content */}
-      <main style={{ padding: '0 2rem 4rem 2rem' }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto'
-        }}>
-          <h1 style={{
-            fontSize: '3rem',
-            fontWeight: '800',
-            color: 'white',
-            marginBottom: '1rem',
-            textAlign: 'center'
-          }}>
+      <main className="px-4 lg:px-8 pb-16">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl lg:text-5xl font-extrabold text-white mb-4 text-center">
             🎨 Discover Artists
           </h1>
           
-          <p style={{
-            fontSize: '1.2rem',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textAlign: 'center',
-            marginBottom: '1rem',
-            maxWidth: '600px',
-            margin: '0 auto 1rem auto'
-          }}>
+          <p className="text-lg lg:text-xl text-white/80 text-center mb-4 max-w-3xl mx-auto">
             Support amazing Farcaster artists and earn CLAPS points for genuine engagement
           </p>
 
           {/* Sync Farcaster Activity Button */}
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <div className="text-center mb-8 lg:mb-12">
             <button
               onClick={handleSyncFarcaster}
               disabled={syncingFarcaster}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '12px',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
-                background: syncingFarcaster
-                  ? 'rgba(107, 114, 128, 1)'
-                  : 'linear-gradient(to right, rgb(147, 51, 234), rgb(219, 39, 119))',
-                cursor: syncingFarcaster ? 'not-allowed' : 'pointer',
-                color: 'white',
-                border: 'none',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                transform: syncingFarcaster ? 'none' : 'scale(1)',
-              }}
-              onMouseOver={(e) => {
-                if (!syncingFarcaster) {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!syncingFarcaster) {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }
-              }}
+              className={`inline-flex items-center gap-2 px-4 lg:px-6 py-3 lg:py-4 rounded-xl font-semibold transition-all text-white border-none shadow-lg ${
+                syncingFarcaster
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-105 cursor-pointer'
+              }`}
             >
               {syncingFarcaster ? (
                 <>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid transparent',
-                    borderTop: '2px solid white',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
+                  <div className="w-4 h-4 border-2 border-transparent border-t-white rounded-full animate-spin"></div>
                   <span>Syncing...</span>
                 </>
               ) : (
                 <>
                   <span>🔄</span>
-                  <span>Sync My Farcaster Activity</span>
+                  <span className="hidden sm:inline">Sync My Farcaster Activity</span>
+                  <span className="sm:hidden">Sync Activity</span>
                 </>
               )}
             </button>
@@ -707,218 +448,104 @@ export default function DiscoverPage() {
 
           {/* Sync Message */}
           {syncMessage && (
-            <div style={{
-              textAlign: 'center',
-              marginBottom: '2rem',
-              padding: '1rem',
-              borderRadius: '12px',
-              background: syncMessage.includes('Failed') || syncMessage.includes('Error')
-                ? 'rgba(239, 68, 68, 0.2)'
-                : 'rgba(34, 197, 94, 0.2)',
-              border: syncMessage.includes('Failed') || syncMessage.includes('Error')
-                ? '1px solid rgba(239, 68, 68, 0.3)'
-                : '1px solid rgba(34, 197, 94, 0.3)',
-              color: syncMessage.includes('Failed') || syncMessage.includes('Error')
-                ? 'rgb(248, 113, 113)'
-                : 'rgb(74, 222, 128)'
-            }}>
+            <div className={`text-center mb-6 lg:mb-8 p-3 lg:p-4 rounded-xl mx-4 ${
+              syncMessage.includes('Failed') || syncMessage.includes('Error')
+                ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+                : 'bg-green-500/20 border border-green-500/30 text-green-300'
+            }`}>
               {syncMessage}
             </div>
           )}
 
           {/* Error Display */}
           {error && (
-            <div style={{
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '12px',
-              padding: '1rem',
-              color: 'white',
-              textAlign: 'center',
-              marginBottom: '2rem'
-            }}>
+            <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-white text-center mb-6 lg:mb-8 mx-4">
               {error}
             </div>
           )}
 
           {/* Artists Grid */}
           {artists.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-              gap: '2rem'
-            }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
               {artists.map((artist) => (
                 <div
                   key={artist.fid}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(20px)',
-                    border: artist.verifiedArtist 
-                      ? '2px solid rgba(34, 197, 94, 0.5)' 
-                      : '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '20px',
-                    padding: '2rem',
-                    transition: 'transform 0.3s ease',
-                    position: 'relative'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-5px)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
+                  className={`bg-white/10 backdrop-blur-xl rounded-2xl lg:rounded-3xl p-4 lg:p-6 transition-transform hover:-translate-y-1 relative ${
+                    artist.verifiedArtist 
+                      ? 'border-2 border-green-500/50' 
+                      : 'border border-white/20'
+                  }`}
                 >
                   {/* Verified Badge */}
                   {artist.verifiedArtist && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '1rem',
-                      right: '1rem',
-                      background: 'rgba(34, 197, 94, 0.2)',
-                      border: '1px solid rgba(34, 197, 94, 0.5)',
-                      borderRadius: '20px',
-                      padding: '0.25rem 0.75rem',
-                      fontSize: '0.8rem',
-                      color: 'rgb(34, 197, 94)',
-                      fontWeight: '600'
-                    }}>
-                      ✓ Verified Artist
+                    <div className="absolute top-3 lg:top-4 right-3 lg:right-4 bg-green-500/20 border border-green-500/50 rounded-full px-2 lg:px-3 py-1 text-xs lg:text-sm text-green-400 font-semibold">
+                      ✓ Verified
                     </div>
                   )}
 
                   {/* Artist Header */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    marginBottom: '1.5rem'
-                  }}>
+                  <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
                     <img
                       src={artist.pfpUrl}
                       alt={artist.displayName}
-                      style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '50%',
-                        border: '3px solid rgba(255, 255, 255, 0.3)'
-                      }}
+                      className="w-12 h-12 lg:w-16 lg:h-16 rounded-full border-2 lg:border-3 border-white/30"
                     />
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{
-                        color: 'white',
-                        fontSize: '1.3rem',
-                        fontWeight: '700',
-                        marginBottom: '0.25rem'
-                      }}>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white text-lg lg:text-xl font-bold mb-1 truncate">
                         {artist.displayName}
                       </h3>
-                      <p style={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '1rem'
-                      }}>
+                      <p className="text-white/70 text-sm lg:text-base truncate">
                         @{artist.username}
                       </p>
                     </div>
                   </div>
 
                   {/* Bio */}
-                  <p style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    lineHeight: '1.5',
-                    marginBottom: '1.5rem'
-                  }}>
+                  <p className="text-white/80 text-sm lg:text-base line-clamp-3 mb-4 lg:mb-6 leading-relaxed">
                     {artist.bio}
                   </p>
 
                   {/* Stats */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '2rem',
-                    marginBottom: '1.5rem'
-                  }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{
-                        color: 'white',
-                        fontSize: '1.2rem',
-                        fontWeight: '700'
-                      }}>
+                  <div className="flex justify-around mb-4 lg:mb-6">
+                    <div className="text-center">
+                      <div className="text-white text-lg lg:text-xl font-bold">
                         {artist.claps.toLocaleString()}
                       </div>
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontSize: '0.9rem'
-                      }}>
+                      <div className="text-white/60 text-xs lg:text-sm">
                         Claps
                       </div>
                     </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{
-                        color: 'white',
-                        fontSize: '1.2rem',
-                        fontWeight: '700'
-                      }}>
+                    <div className="text-center">
+                      <div className="text-white text-lg lg:text-xl font-bold">
                         {artist.connections}
                       </div>
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontSize: '0.9rem'
-                      }}>
+                      <div className="text-white/60 text-xs lg:text-sm">
                         Connections
                       </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
                     <button
                       onClick={() => handleClap(artist.fid)}
                       disabled={loading[artist.fid] || artist.alreadyClappedToday}
-                      style={{
-                        flex: 1,
-                        background: artist.alreadyClappedToday
-                          ? 'rgba(34, 197, 94, 0.3)' 
-                          : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        padding: '0.75rem 1rem',
-                        color: 'white',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        cursor: loading[artist.fid] || artist.alreadyClappedToday ? 'not-allowed' : 'pointer',
-                        opacity: loading[artist.fid] || artist.alreadyClappedToday ? 0.7 : 1,
-                        transition: 'all 0.3s ease'
-                      }}
+                      className={`flex-1 px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-sm lg:text-base font-semibold transition-all border-none ${
+                        artist.alreadyClappedToday
+                          ? 'bg-green-500/30 text-green-300 cursor-not-allowed' 
+                          : loading[artist.fid]
+                          ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 cursor-pointer'
+                      }`}
                     >
                       {loading[artist.fid] ? '👏 Clapping...' : 
-                       artist.alreadyClappedToday ? '✅ Clapped Today!' : 
-                       '👏 Clap for Artist (+5 CLAPS)'}
+                       artist.alreadyClappedToday ? '✅ Clapped!' : 
+                       '👏 Clap (+5)'}
                     </button>
 
                     <button
                       onClick={() => router.push(`/artist/${artist.username}`)}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '0.75rem 1rem',
-                        color: 'white',
-                        fontSize: '1rem',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        minWidth: '100px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
+                      className="flex-shrink-0 px-3 lg:px-4 py-2 lg:py-3 bg-white/10 border border-white/20 rounded-xl text-white text-sm lg:text-base font-medium cursor-pointer transition-all hover:bg-white/20 hover:border-white/30"
                     >
                       👤 Profile
                     </button>
@@ -927,17 +554,30 @@ export default function DiscoverPage() {
               ))}
             </div>
           ) : (
-            <div style={{
-              textAlign: 'center',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1.2rem',
-              padding: '4rem 2rem'
-            }}>
+            <div className="text-center text-white/80 text-lg lg:text-xl py-16">
               No artists found. Check back soon!
             </div>
           )}
         </div>
       </main>
+
+      {/* Add spinning animation */}
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,11 +1,14 @@
 // app/api/sync-farcaster/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { NeynarAPIClient } from '@neynar/nodejs-sdk';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const neynarApiKey = process.env.NEYNAR_API_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const neynar = new NeynarAPIClient(neynarApiKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'userFid is required' },
         { status: 400 }
+      );
+    }
+
+    if (!neynarApiKey) {
+      return NextResponse.json(
+        { error: 'Neynar API key not configured' },
+        { status: 500 }
       );
     }
 
@@ -79,74 +89,256 @@ export async function POST(request: NextRequest) {
     let totalActivitiesDetected = 0;
     const detectedActivities = [];
 
-    // Simulate finding activities (since external API is problematic)
-    // In a real implementation, this would query Farcaster Hub API
-    const mockActivities = [
-      {
-        type: 'CLAP_REACTION',
-        targetArtistId: artists[0]?.id,
-        targetArtistUsername: artists[0]?.username,
-        castHash: `0x${Math.random().toString(16).substring(2, 10)}`,
-        points: 5
-      }
-    ];
+    try {
+      // Get user's recent casts (last 24 hours)
+      const userCasts = await neynar.fetchCastsForUser(userFid, {
+        limit: 50 // Adjust as needed
+      });
 
-    // Process mock activities (replace with real Farcaster data later)
-    for (const mockActivity of mockActivities) {
-      if (!mockActivity.targetArtistId) continue;
+      console.log(`📝 Found ${userCasts.casts.length} recent casts from user`);
 
-      // Check if we already recorded this activity
-      const { data: existingActivity } = await supabase
-        .from('activities')
-        .select('id')
-        .eq('"userId"', user.id)
-        .eq('"activityType"', mockActivity.type)
-        .eq('"farcasterCastHash"', mockActivity.castHash)
-        .eq('"targetUserId"', mockActivity.targetArtistId)
-        .single();
+      // Check each cast for interactions with verified artists
+      for (const cast of userCasts.casts) {
+        const castTimestamp = new Date(cast.timestamp);
+        
+        // Only check casts from the last 24 hours
+        if (castTimestamp < twentyFourHoursAgo) continue;
 
-      if (existingActivity) {
-        console.log(`⚠️ Activity already recorded`);
-        continue;
-      }
-
-      // Award points through existing activities API
-      try {
-        const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            activityType: mockActivity.type,
-            targetUserId: mockActivity.targetArtistId,
-            farcasterCastHash: mockActivity.castHash,
-            metadata: {
-              syncedFromFarcaster: true,
-              simulatedActivity: true, // Mark as simulated for now
-              timestamp: now.toISOString(),
-              targetArtistUsername: mockActivity.targetArtistUsername
-            }
-          })
-        });
-
-        if (activityResponse.ok) {
-          const activityResult = await activityResponse.json();
-          totalActivitiesDetected++;
+        // Check if this cast mentions any verified artists
+        for (const artist of artists) {
+          const artistUsername = artist.username.toLowerCase();
+          const castText = cast.text.toLowerCase();
           
-          detectedActivities.push({
-            type: mockActivity.type,
-            targetArtist: mockActivity.targetArtistUsername,
-            points: activityResult.pointsAwarded,
-            timestamp: now.toISOString()
-          });
+          // Check for artist mentions
+          if (castText.includes(`@${artistUsername}`) || castText.includes(artistUsername)) {
+            
+            // Check if we already recorded this activity
+            const { data: existingActivity } = await supabase
+              .from('activities')
+              .select('id')
+              .eq('"userId"', user.id)
+              .eq('"activityType"', 'ARTIST_TAG_MENTION')
+              .eq('"farcasterCastHash"', cast.hash)
+              .eq('"targetUserId"', artist.id)
+              .single();
 
-          console.log(`✅ Awarded ${activityResult.pointsAwarded} points for ${mockActivity.type} to ${mockActivity.targetArtistUsername}`);
+            if (existingActivity) {
+              console.log(`⚠️ Artist mention already recorded for cast ${cast.hash}`);
+              continue;
+            }
+
+            // Award points for artist mention
+            try {
+              const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: user.id,
+                  activityType: 'ARTIST_TAG_MENTION',
+                  targetUserId: artist.id,
+                  farcasterCastHash: cast.hash,
+                  metadata: {
+                    syncedFromFarcaster: true,
+                    realFarcasterData: true,
+                    castText: cast.text,
+                    timestamp: cast.timestamp,
+                    targetArtistUsername: artist.username
+                  }
+                })
+              });
+
+              if (activityResponse.ok) {
+                const activityResult = await activityResponse.json();
+                totalActivitiesDetected++;
+                
+                detectedActivities.push({
+                  type: 'ARTIST_TAG_MENTION',
+                  targetArtist: artist.username,
+                  points: activityResult.pointsAwarded,
+                  timestamp: cast.timestamp,
+                  castHash: cast.hash
+                });
+
+                console.log(`✅ Awarded ${activityResult.pointsAwarded} points for mentioning @${artist.username}`);
+              }
+            } catch (error) {
+              console.error(`❌ Error recording artist mention activity:`, error);
+            }
+          }
         }
-      } catch (error) {
-        console.error(`❌ Error recording activity:`, error);
       }
+
+      // Get user's reactions (likes) to check for artist support
+      const userReactions = await neynar.fetchUserReactions(userFid, {
+        limit: 50,
+        type: 'likes' // Focus on likes for now
+      });
+
+      console.log(`❤️ Found ${userReactions.reactions.length} recent reactions from user`);
+
+      // Check reactions to verified artists' casts
+      for (const reaction of userReactions.reactions) {
+        const reactionTimestamp = new Date(reaction.timestamp);
+        
+        // Only check reactions from the last 24 hours
+        if (reactionTimestamp < twentyFourHoursAgo) continue;
+
+        // Find if the reaction target is a verified artist
+        const targetArtist = artists.find(artist => artist.farcasterFid === reaction.cast.author.fid);
+        
+        if (targetArtist) {
+          // Check if we already recorded this reaction
+          const { data: existingActivity } = await supabase
+            .from('activities')
+            .select('id')
+            .eq('"userId"', user.id)
+            .eq('"activityType"', 'CLAP_REACTION')
+            .eq('"farcasterCastHash"', reaction.cast.hash)
+            .eq('"targetUserId"', targetArtist.id)
+            .single();
+
+          if (existingActivity) {
+            console.log(`⚠️ Reaction already recorded for cast ${reaction.cast.hash}`);
+            continue;
+          }
+
+          // Award points for supporting artist
+          try {
+            const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId: user.id,
+                activityType: 'CLAP_REACTION',
+                targetUserId: targetArtist.id,
+                farcasterCastHash: reaction.cast.hash,
+                metadata: {
+                  syncedFromFarcaster: true,
+                  realFarcasterData: true,
+                  reactionType: 'like',
+                  castText: reaction.cast.text,
+                  timestamp: reaction.timestamp,
+                  targetArtistUsername: targetArtist.username
+                }
+              })
+            });
+
+            if (activityResponse.ok) {
+              const activityResult = await activityResponse.json();
+              totalActivitiesDetected++;
+              
+              detectedActivities.push({
+                type: 'CLAP_REACTION',
+                targetArtist: targetArtist.username,
+                points: activityResult.pointsAwarded,
+                timestamp: reaction.timestamp,
+                castHash: reaction.cast.hash
+              });
+
+              console.log(`✅ Awarded ${activityResult.pointsAwarded} points for liking @${targetArtist.username}'s cast`);
+            }
+          } catch (error) {
+            console.error(`❌ Error recording reaction activity:`, error);
+          }
+        }
+      }
+
+      // Get user's recasts to check for artist promotion
+      const userRecasts = await neynar.fetchCastsForUser(userFid, {
+        limit: 25,
+        include_replies: false
+      });
+
+      // Check for recasts of artist content
+      for (const cast of userRecasts.casts) {
+        const castTimestamp = new Date(cast.timestamp);
+        
+        // Only check recasts from the last 24 hours
+        if (castTimestamp < twentyFourHoursAgo) continue;
+
+        // Check if this is a recast (has parent_hash)
+        if (cast.parent_hash) {
+          try {
+            // Get the original cast to see if it's from an artist
+            const originalCast = await neynar.fetchCastByHash(cast.parent_hash);
+            const originalArtist = artists.find(artist => artist.farcasterFid === originalCast.cast.author.fid);
+            
+            if (originalArtist) {
+              // Check if we already recorded this recast
+              const { data: existingActivity } = await supabase
+                .from('activities')
+                .select('id')
+                .eq('"userId"', user.id)
+                .eq('"activityType"', 'SHARE_ARTIST_WORK')
+                .eq('"farcasterCastHash"', cast.hash)
+                .eq('"targetUserId"', originalArtist.id)
+                .single();
+
+              if (existingActivity) {
+                console.log(`⚠️ Recast already recorded for cast ${cast.hash}`);
+                continue;
+              }
+
+              // Award points for sharing artist work
+              try {
+                const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    activityType: 'SHARE_ARTIST_WORK',
+                    targetUserId: originalArtist.id,
+                    farcasterCastHash: cast.hash,
+                    metadata: {
+                      syncedFromFarcaster: true,
+                      realFarcasterData: true,
+                      originalCastHash: cast.parent_hash,
+                      recastText: cast.text,
+                      timestamp: cast.timestamp,
+                      targetArtistUsername: originalArtist.username
+                    }
+                  })
+                });
+
+                if (activityResponse.ok) {
+                  const activityResult = await activityResponse.json();
+                  totalActivitiesDetected++;
+                  
+                  detectedActivities.push({
+                    type: 'SHARE_ARTIST_WORK',
+                    targetArtist: originalArtist.username,
+                    points: activityResult.pointsAwarded,
+                    timestamp: cast.timestamp,
+                    castHash: cast.hash
+                  });
+
+                  console.log(`✅ Awarded ${activityResult.pointsAwarded} points for sharing @${originalArtist.username}'s work`);
+                }
+              } catch (error) {
+                console.error(`❌ Error recording recast activity:`, error);
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Error fetching original cast:`, error);
+          }
+        }
+      }
+
+    } catch (neynarError) {
+      console.error('❌ Neynar API Error:', neynarError);
+      
+      // If Neynar fails, return a helpful error message
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch data from Farcaster. Please try again later.',
+        details: neynarError instanceof Error ? neynarError.message : 'Unknown error'
+      }, { status: 500 });
     }
 
     // Update user's last sync time
@@ -164,7 +356,7 @@ export async function POST(request: NextRequest) {
       message: totalActivitiesDetected > 0 
         ? `Found ${totalActivitiesDetected} new activities! Points awarded.`
         : 'No new activities found. Try supporting some artists on Farcaster and sync again later!',
-      note: 'Currently using simulated data. Real Farcaster integration coming soon!'
+      note: 'Real Farcaster integration active! 🎉'
     });
 
   } catch (error) {

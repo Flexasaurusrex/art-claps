@@ -39,6 +39,8 @@ export default function ArtistProfilePage() {
   const [clapping, setClapping] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [alreadyClappedToday, setAlreadyClappedToday] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const username = params.username as string;
 
@@ -52,8 +54,11 @@ export default function ArtistProfilePage() {
   useEffect(() => {
     if (isAuthenticated && profile) {
       fetchUserStats();
+      if (artist) {
+        checkFollowStatus();
+      }
     }
-  }, [isAuthenticated, profile]);
+  }, [isAuthenticated, profile, artist]);
 
   // Refresh auth on page load
   useEffect(() => {

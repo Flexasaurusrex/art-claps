@@ -20,6 +20,8 @@ interface Artist {
   joinedDate: string;
   artistLinks?: any[];
   extendedBio?: string;
+  follower_count?: number;
+  following_count?: number;
 }
 
 interface UserStats {
@@ -101,6 +103,76 @@ export default function ArtistProfilePage() {
       console.error('Error fetching artist profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkFollowStatus = async () => {
+    if (!isAuthenticated || !profile || !artist) return;
+    
+    try {
+      const response = await fetch(`/api/follow?userFid=${profile.fid}&targetFid=${artist.farcasterFid}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsFollowing(data.isFollowing);
+      }
+    } catch (error) {
+      console.error('Error checking follow status:', error);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!isAuthenticated || !profile || !artist || followLoading) return;
+    
+    setFollowLoading(true);
+    
+    try {
+      const response = await fetch('/api/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userFid: profile.fid,
+          targetFid: artist.farcasterFid,
+          action: isFollowing ? 'unfollow' : 'follow'
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsFollowing(!isFollowing);
+        
+        // Update artist follower count
+        setArtist(prev => prev ? {
+          ...prev,
+          follower_count: isFollowing 
+            ? (prev.follower_count || 0) - 1 
+            : (prev.follower_count || 0) + 1
+        } : null);
+
+        // Update user stats if following (10 points earned)
+        if (!isFollowing && userStats) {
+          setUserStats(prev => prev ? {
+            ...prev,
+            totalPoints: data.newTotalPoints || prev.totalPoints + 10,
+            weeklyPoints: prev.weeklyPoints + 10,
+            monthlyPoints: prev.monthlyPoints + 10
+          } : null);
+        }
+
+        // Show success feedback
+        const action = isFollowing ? 'Unfollowed' : 'Followed';
+        const pointsMsg = !isFollowing ? ' (+10 CLAPS points earned!)' : '';
+        alert(`🎉 ${action} ${artist.displayName}!${pointsMsg}`);
+
+      } else {
+        alert(data.error || 'Failed to update follow status');
+      }
+    } catch (error) {
+      console.error('Error updating follow status:', error);
+      alert('Failed to update follow status. Please try again.');
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -247,10 +319,10 @@ export default function ArtistProfilePage() {
                 </div>
                 <div className="text-center bg-white/5 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                    {artist.connections.toLocaleString()}
+                    {(artist.follower_count || artist.connections).toLocaleString()}
                   </div>
                   <div className="text-xs sm:text-sm lg:text-base text-white/60">
-                    Connections
+                    Followers
                   </div>
                 </div>
                 <div className="text-center bg-white/5 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
@@ -296,13 +368,22 @@ export default function ArtistProfilePage() {
           </button>
           
           <button 
-            className="flex-1 bg-white/10 border border-white/20 text-white font-medium py-3 sm:py-4 px-6 rounded-xl hover:bg-white/20 transition-all duration-300 text-sm sm:text-base cursor-pointer"
-            onClick={() => {
-              // Add follow functionality here
-              console.log('Follow artist');
-            }}
+            onClick={handleFollow}
+            disabled={followLoading || !isAuthenticated}
+            className={`flex-1 font-medium py-3 sm:py-4 px-6 rounded-xl transition-all duration-300 text-sm sm:text-base cursor-pointer border-none ${
+              !isAuthenticated
+                ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                : followLoading
+                ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+                : isFollowing
+                ? 'bg-orange-500/20 border border-orange-500/50 text-orange-300 hover:bg-orange-500/30'
+                : 'bg-blue-500/20 border border-blue-500/50 text-blue-300 hover:bg-blue-500/30'
+            }`}
           >
-            🔔 Follow Artist
+            {followLoading ? '⏳ Loading...' :
+             !isAuthenticated ? '🔒 Sign in to Follow' :
+             isFollowing ? '✓ Following' : 
+             `🔔 Follow Artist (+10)`}
           </button>
         </div>
 

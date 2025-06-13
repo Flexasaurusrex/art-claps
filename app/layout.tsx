@@ -1,21 +1,23 @@
 import './globals.css'
-import Providers from './providers'
+import { Providers } from './providers'
+import type { ReactNode } from 'react'
 
 export const metadata = {
-  title: 'Art Claps – Support Artists, Earn Rewards',
-  description:
-    'The SocialFi platform where supporting Farcaster artists earns you points and builds community.',
+  title: 'Art Claps - Support Artists, Earn Rewards',
+  description: 'The SocialFi platform where supporting Farcaster artists earns you points and builds community.',
 }
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

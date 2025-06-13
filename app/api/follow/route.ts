@@ -136,6 +136,13 @@ export async function POST(request: NextRequest) {
         console.error('Error updating target follower count:', targetUpdateError);
       }
 
+      // Get current user stats for updates
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('weeklyPoints, monthlyPoints, following_count')
+        .eq('id', userId)
+        .single();
+
       // Award 10 points to user and update following count
       const newTotalPoints = (userResult.data.totalPoints || 0) + 10;
       
@@ -143,9 +150,9 @@ export async function POST(request: NextRequest) {
         .from('users')
         .update({ 
           totalPoints: newTotalPoints,
-          weeklyPoints: supabase.sql`weeklyPoints + 10`,
-          monthlyPoints: supabase.sql`monthlyPoints + 10`,
-          following_count: supabase.sql`following_count + 1`
+          weeklyPoints: (currentUser?.weeklyPoints || 0) + 10,
+          monthlyPoints: (currentUser?.monthlyPoints || 0) + 10,
+          following_count: (currentUser?.following_count || 0) + 1
         })
         .eq('id', userId);
 
@@ -198,11 +205,18 @@ export async function POST(request: NextRequest) {
         console.error('Error updating target follower count:', targetUpdateError);
       }
 
+      // Get current user following count
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('following_count')
+        .eq('id', userId)
+        .single();
+
       // Update following count for user (no points deducted)
       const { error: userUpdateError } = await supabase
         .from('users')
         .update({ 
-          following_count: supabase.sql`following_count - 1`
+          following_count: Math.max(0, (currentUser?.following_count || 0) - 1)
         })
         .eq('id', userId);
 

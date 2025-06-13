@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useProfile } from '@farcaster/auth-kit';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Artist {
   id: string;
@@ -31,7 +31,7 @@ interface UserStats {
 }
 
 export default function ArtistProfilePage() {
-  const { isAuthenticated, profile } = useProfile();
+  const { isAuthenticated, profile, refreshAuth } = useAuth();
   const params = useParams();
   const router = useRouter();
   const [artist, setArtist] = useState<Artist | null>(null);
@@ -55,21 +55,10 @@ export default function ArtistProfilePage() {
     }
   }, [isAuthenticated, profile]);
 
-  // Check auth status and try to persist
+  // Refresh auth on page load
   useEffect(() => {
-    const checkAuth = () => {
-      // Force re-check auth status on page load
-      if (!isAuthenticated && typeof window !== 'undefined') {
-        // Small delay to let auth provider initialize
-        setTimeout(() => {
-          if (!isAuthenticated) {
-            console.log('Auth not detected on profile page');
-          }
-        }, 1000);
-      }
-    };
-    checkAuth();
-  }, [isAuthenticated]);
+    refreshAuth();
+  }, []);
 
   const fetchUserStats = async () => {
     try {

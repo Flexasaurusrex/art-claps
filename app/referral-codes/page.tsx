@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useProfile } from '@farcaster/auth-kit';
+import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 interface ReferralCode {
@@ -22,7 +22,7 @@ interface UserData {
 }
 
 export default function ReferralPage() {
-  const { isAuthenticated, profile } = useProfile();
+  const { isAuthenticated, profile, refreshAuth } = useAuth();
   const router = useRouter();
   const [referralCodes, setReferralCodes] = useState<ReferralCode[]>([]);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -30,21 +30,37 @@ export default function ReferralPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  // Refresh auth on page load
   useEffect(() => {
-    // Skip auth checks - just load the page
-    fetchReferralData();
+    refreshAuth();
   }, []);
 
+  useEffect(() => {
+    // Wait for profile to be available, then fetch data
+    if (profile?.fid) {
+      fetchReferralData();
+    } else if (!profile && !isLoading) {
+      // If no profile and not loading, set loading to false
+      setIsLoading(false);
+    }
+  }, [profile]);
+
   const fetchReferralData = async () => {
+    if (!profile?.fid) {
+      console.log('No profile.fid available for referral data');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Use a default FID if profile not loaded yet
-      const fid = profile?.fid || 7418; // Your FID as fallback
-      const response = await fetch(`/api/referrals?fid=${fid}`);
+      const response = await fetch(`/api/referrals?fid=${profile.fid}`);
       const data = await response.json();
       
       if (data.success) {
         setReferralCodes(data.codes);
         setUserData(data.user);
+      } else {
+        console.error('Referral data fetch failed:', data.error);
       }
     } catch (error) {
       console.error('Error fetching referral data:', error);
@@ -54,15 +70,19 @@ export default function ReferralPage() {
   };
 
   const generateNewCode = async () => {
+    if (!profile?.fid) {
+      alert('Please sign in to generate referral codes');
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
-      const fid = profile?.fid || 7418; // Your FID as fallback
       const response = await fetch('/api/referrals/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userFid: fid
+          userFid: profile.fid
         })
       });
 
@@ -120,27 +140,31 @@ export default function ReferralPage() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
-          <a 
-            href="/discover"
-            className="text-white/80 hover:text-white no-underline text-sm lg:text-base transition-colors flex items-center gap-2"
+          <button 
+            onClick={() => router.push('/discover')}
+            className="text-white/80 hover:text-white bg-transparent border-none text-sm lg:text-base transition-colors flex items-center gap-2 cursor-pointer"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m15 18-6-6 6-6"/>
             </svg>
             Back to Discover
-          </a>
+          </button>
           
-          <div className="flex items-center gap-3">
-            <img 
-              src={profile?.pfpUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin'} 
-              alt={profile?.displayName || 'Admin'}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/30"
-            />
-            <div className="text-white">
-              <div className="font-semibold text-sm sm:text-base">{profile?.displayName || 'Admin'}</div>
-              <div className="text-xs sm:text-sm opacity-80">Verified Artist</div>
+          {profile && (
+            <div className="flex items-center gap-3">
+              <img 
+                src={profile.pfpUrl} 
+                alt={profile.displayName}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/30"
+              />
+              <div className="text-white">
+                <div className="font-semibold text-sm sm:text-base">{profile.displayName}</div>
+                <div className="text-xs sm:text-sm opacity-80">
+                  {profile.fid === 7418 ? 'Admin' : 'Verified Artist'}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -182,14 +206,16 @@ export default function ReferralPage() {
 
             <button
               onClick={generateNewCode}
-              disabled={isGenerating}
-              className={`px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-white text-sm sm:text-base lg:text-lg font-semibold transition-all duration-300 ${
-                isGenerating 
+              disabled={isGenerating || !profile}
+              className={`px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-white text-sm sm:text-base lg:text-lg font-semibold transition-all duration-300 border-none ${
+                isGenerating || !profile
                   ? 'bg-white/30 cursor-not-allowed' 
                   : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105 cursor-pointer'
               }`}
             >
-              {isGenerating ? '⏳ Generating...' : '✨ Generate New Code'}
+              {isGenerating ? '⏳ Generating...' : 
+               !profile ? '🔒 Sign in to Generate' :
+               '✨ Generate New Code'}
             </button>
           </div>
 
@@ -197,6 +223,14 @@ export default function ReferralPage() {
           {isLoading ? (
             <div className="text-center text-white text-lg lg:text-xl py-8 lg:py-16">
               Loading your referral codes... 🎨
+            </div>
+          ) : !profile ? (
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-8 lg:p-12 text-center text-white">
+              <div className="text-4xl lg:text-5xl mb-4 lg:mb-6">🔐</div>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">Sign in to access referrals</h2>
+              <p className="text-white/80 text-sm sm:text-base lg:text-lg">
+                Please sign in to view and generate your referral codes.
+              </p>
             </div>
           ) : referralCodes.length === 0 ? (
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-8 lg:p-12 text-center text-white">
@@ -247,10 +281,10 @@ export default function ReferralPage() {
                       <div className="flex flex-row gap-2 lg:gap-3">
                         <button
                           onClick={() => copyToClipboard(referral.code)}
-                          className={`flex-1 lg:flex-none px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-medium transition-all duration-300 ${
+                          className={`flex-1 lg:flex-none px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-medium transition-all duration-300 border-none cursor-pointer ${
                             copiedCode === referral.code 
                               ? 'bg-green-500/30 cursor-default' 
-                              : 'bg-white/20 hover:bg-white/30 cursor-pointer'
+                              : 'bg-white/20 hover:bg-white/30'
                           }`}
                         >
                           {copiedCode === referral.code ? '✓ Copied' : '📋 Copy'}
@@ -258,7 +292,7 @@ export default function ReferralPage() {
                         
                         <button
                           onClick={() => shareCode(referral.code)}
-                          className="flex-1 lg:flex-none bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-medium cursor-pointer transition-all duration-300 hover:scale-105"
+                          className="flex-1 lg:flex-none bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-medium cursor-pointer transition-all duration-300 hover:scale-105 border-none"
                         >
                           🚀 Share
                         </button>

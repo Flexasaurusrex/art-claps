@@ -129,13 +129,20 @@ export default function ArtistProfilePage() {
     try {
       const response = await fetch('/api/follow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           userFid: profile.fid,
           targetFid: artist.farcasterFid,
           action: isFollowing ? 'unfollow' : 'follow'
         })
       });
+
+      // Check if response is ok
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -166,6 +173,7 @@ export default function ArtistProfilePage() {
         alert(`🎉 ${action} ${artist.displayName}!${pointsMsg}`);
 
       } else {
+        console.error('API Error:', data);
         alert(data.error || 'Failed to update follow status');
       }
     } catch (error) {

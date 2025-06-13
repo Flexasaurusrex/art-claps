@@ -90,107 +90,55 @@ export default function ApplyPage() {
 
   if (!isAuthenticated || !profile) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem'
-      }}>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg lg:text-xl px-4">
         Loading...
       </div>
     );
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      padding: '2rem'
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 font-sans p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <header style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '3rem'
-      }}>
-        <div style={{
-          fontSize: '2rem',
-          fontWeight: 'bold',
-          color: 'white'
-        }}>
-          <a href="/" style={{ color: 'white', textDecoration: 'none' }}>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 lg:mb-12 gap-4">
+        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+          <a href="/" className="text-white no-underline hover:text-purple-200 transition-colors">
             Art Claps
           </a>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="flex items-center gap-3">
           <img 
             src={profile.pfpUrl} 
             alt={profile.displayName}
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              border: '2px solid rgba(255, 255, 255, 0.3)'
-            }}
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/30"
           />
-          <div style={{ color: 'white' }}>
-            <div style={{ fontWeight: '600' }}>{profile.displayName}</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>@{profile.username}</div>
+          <div className="text-white">
+            <div className="font-semibold text-sm sm:text-base">{profile.displayName}</div>
+            <div className="text-xs sm:text-sm opacity-80">@{profile.username}</div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '24px',
-          padding: '3rem',
-          textAlign: 'center'
-        }}>
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl lg:rounded-3xl p-6 sm:p-8 lg:p-12 text-center">
           
           {status === 'idle' ? (
             <>
-              <h1 style={{
-                fontSize: '2.5rem',
-                fontWeight: '800',
-                color: 'white',
-                marginBottom: '1rem'
-              }}>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mb-4 lg:mb-6">
                 🎨 Become a Verified Artist
               </h1>
               
-              <p style={{
-                fontSize: '1.2rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginBottom: '3rem',
-                lineHeight: '1.6'
-              }}>
+              <p className="text-base sm:text-lg lg:text-xl text-white/80 mb-8 lg:mb-12 leading-relaxed max-w-2xl mx-auto">
                 Join Art Claps as a verified artist and start receiving support from the Farcaster community. 
                 Get claps, build your audience, and connect with fellow creators.
               </p>
 
-              <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
+              <form onSubmit={handleSubmit} className="text-left">
                 
                 {/* Referral Code Section */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'white',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem'
-                  }}>
+                <div className="mb-6 lg:mb-8">
+                  <label className="block text-white font-semibold mb-2 text-sm sm:text-base">
                     🎟️ Referral Code (Optional)
                   </label>
                   <input
@@ -199,46 +147,23 @@ export default function ApplyPage() {
                     value={formData.referralCode}
                     onChange={handleInputChange}
                     placeholder="Enter referral code for instant verification"
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      backdropFilter: 'blur(10px)'
-                    }}
+                    className="w-full p-3 sm:p-4 rounded-xl border-none bg-white/10 text-white text-sm sm:text-base backdrop-blur-sm placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
                   />
-                  <p style={{
-                    fontSize: '0.9rem',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    marginTop: '0.5rem'
-                  }}>
+                  <p className="text-xs sm:text-sm text-white/60 mt-2">
                     Have a code from a verified artist? Enter it above for instant verification!
                   </p>
                 </div>
 
                 {/* Divider */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  margin: '2rem 0',
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }}>
-                  <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
-                  <span style={{ margin: '0 1rem' }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
+                <div className="flex items-center my-6 lg:my-8 text-white/60">
+                  <div className="flex-1 h-px bg-white/20"></div>
+                  <span className="mx-4 text-sm sm:text-base">OR</span>
+                  <div className="flex-1 h-px bg-white/20"></div>
                 </div>
 
                 {/* Portfolio URL */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'white',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem'
-                  }}>
+                <div className="mb-6 lg:mb-8">
+                  <label className="block text-white font-semibold mb-2 text-sm sm:text-base">
                     🖼️ Portfolio URL (Optional)
                   </label>
                   <input
@@ -247,27 +172,13 @@ export default function ApplyPage() {
                     value={formData.portfolioUrl}
                     onChange={handleInputChange}
                     placeholder="https://your-portfolio.com"
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      backdropFilter: 'blur(10px)'
-                    }}
+                    className="w-full p-3 sm:p-4 rounded-xl border-none bg-white/10 text-white text-sm sm:text-base backdrop-blur-sm placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
                   />
                 </div>
 
                 {/* Application Message */}
-                <div style={{ marginBottom: '2rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'white',
-                    fontWeight: '600',
-                    marginBottom: '0.5rem'
-                  }}>
+                <div className="mb-6 lg:mb-8">
+                  <label className="block text-white font-semibold mb-2 text-sm sm:text-base">
                     ✨ Tell us about your art
                   </label>
                   <textarea
@@ -276,43 +187,21 @@ export default function ApplyPage() {
                     onChange={handleInputChange}
                     placeholder="What kind of art do you create? Share your story, style, and what makes your work unique..."
                     rows={5}
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '1rem',
-                      backdropFilter: 'blur(10px)',
-                      resize: 'vertical',
-                      fontFamily: 'inherit'
-                    }}
+                    className="w-full p-3 sm:p-4 rounded-xl border-none bg-white/10 text-white text-sm sm:text-base backdrop-blur-sm placeholder:text-white/50 resize-y focus:outline-none focus:ring-2 focus:ring-white/30"
                   />
                 </div>
 
                 {/* Terms Checkbox */}
-                <div style={{ 
-                  marginBottom: '2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
+                <div className="mb-6 lg:mb-8 flex items-start gap-3">
                   <input
                     type="checkbox"
                     id="terms"
                     name="agreedToTerms"
                     checked={formData.agreedToTerms}
                     onChange={handleInputChange}
-                    style={{
-                      width: '18px',
-                      height: '18px'
-                    }}
+                    className="w-4 h-4 sm:w-5 sm:h-5 mt-1 accent-purple-500"
                   />
-                  <label htmlFor="terms" style={{
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    fontSize: '0.9rem'
-                  }}>
+                  <label htmlFor="terms" className="text-white/80 text-xs sm:text-sm leading-relaxed">
                     I agree to be a positive member of the Art Claps community and support fellow artists
                   </label>
                 </div>
@@ -321,20 +210,11 @@ export default function ApplyPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{
-                    width: '100%',
-                    background: isSubmitting 
-                      ? 'rgba(255, 255, 255, 0.3)' 
-                      : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '1.25rem',
-                    color: 'white',
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease'
-                  }}
+                  className={`w-full py-3 sm:py-4 rounded-xl text-white text-sm sm:text-base lg:text-lg font-semibold transition-all duration-300 ${
+                    isSubmitting 
+                      ? 'bg-white/30 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105 cursor-pointer'
+                  }`}
                 >
                   {isSubmitting ? '🎨 Submitting Application...' : '🚀 Apply to Become Artist'}
                 </button>
@@ -343,35 +223,22 @@ export default function ApplyPage() {
           ) : (
             /* Success/Error States */
             <div>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
+              <div className="text-4xl lg:text-5xl mb-4 lg:mb-6">
                 {status === 'referral_success' ? '🎉' : status === 'success' ? '✨' : '❌'}
               </div>
               
-              <h2 style={{
-                fontSize: '2rem',
-                fontWeight: '700',
-                color: 'white',
-                marginBottom: '1rem'
-              }}>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 lg:mb-6">
                 {status === 'referral_success' ? 'Welcome, Verified Artist!' :
                  status === 'success' ? 'Application Submitted!' :
                  'Application Error'}
               </h2>
               
-              <p style={{
-                fontSize: '1.2rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginBottom: '2rem',
-                lineHeight: '1.6'
-              }}>
+              <p className="text-base sm:text-lg lg:text-xl text-white/80 mb-6 lg:mb-8 leading-relaxed max-w-2xl mx-auto">
                 {message}
               </p>
 
               {status !== 'error' && (
-                <p style={{
-                  fontSize: '1rem',
-                  color: 'rgba(255, 255, 255, 0.6)'
-                }}>
+                <p className="text-sm sm:text-base text-white/60">
                   Redirecting you in a moment...
                 </p>
               )}
@@ -379,16 +246,7 @@ export default function ApplyPage() {
               {status === 'error' && (
                 <button
                   onClick={() => setStatus('idle')}
-                  style={{
-                    background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '1rem 2rem',
-                    color: 'white',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-white text-sm sm:text-base font-semibold cursor-pointer transition-all duration-300 hover:scale-105"
                 >
                   Try Again
                 </button>
@@ -399,59 +257,33 @@ export default function ApplyPage() {
 
         {/* Info Cards */}
         {status === 'idle' && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
-            marginTop: '3rem'
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚡</div>
-              <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mt-8 lg:mt-12">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-6 text-center">
+              <div className="text-3xl lg:text-4xl mb-3 lg:mb-4">⚡</div>
+              <h3 className="text-white text-base sm:text-lg font-semibold mb-2 lg:mb-3">
                 Instant with Referral
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+              <p className="text-white/70 text-xs sm:text-sm lg:text-base leading-relaxed">
                 Get verified instantly with a code from existing artists
               </p>
             </div>
 
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
-              <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-6 text-center">
+              <div className="text-3xl lg:text-4xl mb-3 lg:mb-4">🎯</div>
+              <h3 className="text-white text-base sm:text-lg font-semibold mb-2 lg:mb-3">
                 Curated Community
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+              <p className="text-white/70 text-xs sm:text-sm lg:text-base leading-relaxed">
                 We manually review applications to maintain quality
               </p>
             </div>
 
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
-              <h3 style={{ color: 'white', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-6 text-center sm:col-span-2 lg:col-span-1">
+              <div className="text-3xl lg:text-4xl mb-3 lg:mb-4">💎</div>
+              <h3 className="text-white text-base sm:text-lg font-semibold mb-2 lg:mb-3">
                 Exclusive Benefits
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+              <p className="text-white/70 text-xs sm:text-sm lg:text-base leading-relaxed">
                 Receive claps, build audience, invite other artists
               </p>
             </div>

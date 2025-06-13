@@ -180,7 +180,8 @@ export async function POST(request: NextRequest) {
 
         // Check reactions to verified artists' casts
         for (const reaction of userReactionsResponse.reactions) {
-          const reactionTimestamp = new Date(reaction.timestamp);
+          // Get timestamp from the cast object instead
+          const reactionTimestamp = new Date(reaction.cast.timestamp);
           
           // Only check reactions from the last 24 hours
           if (reactionTimestamp < twentyFourHoursAgo) continue;
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
                     realFarcasterData: true,
                     reactionType: 'like',
                     castText: reaction.cast.text,
-                    timestamp: reaction.timestamp,
+                    timestamp: reaction.cast.timestamp,
                     targetArtistUsername: targetArtist.username
                   }
                 })
@@ -235,7 +236,7 @@ export async function POST(request: NextRequest) {
                   type: 'CLAP_REACTION',
                   targetArtist: targetArtist.username,
                   points: activityResult.pointsAwarded,
-                  timestamp: reaction.timestamp,
+                  timestamp: reaction.cast.timestamp,
                   castHash: reaction.cast.hash
                 });
 

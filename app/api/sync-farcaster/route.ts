@@ -1,7 +1,7 @@
 // app/api/sync-farcaster/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
+import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -9,11 +9,8 @@ const neynarApiKey = process.env.NEYNAR_API_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Correct Neynar SDK initialization
-const config = new Configuration({
-  apiKey: neynarApiKey,
-});
-const client = new NeynarAPIClient(config);
+// Simple Neynar SDK initialization (works with older versions)
+const client = new NeynarAPIClient(neynarApiKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -95,10 +92,9 @@ export async function POST(request: NextRequest) {
     const detectedActivities = [];
 
     try {
-      // Get user's recent casts using correct SDK method
-      const userCastsResponse = await client.fetchCastsForUser({
-        fid: userFid,
-        limit: 50
+      // Try to get user's recent casts
+      const userCastsResponse = await client.fetchCastsForUser(userFid, {
+        limit: 30
       });
 
       console.log(`📝 Found ${userCastsResponse.casts.length} recent casts from user`);
@@ -227,99 +223,54 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Get user profile to check for reactions/likes
-      try {
-        const { users } = await client.fetchBulkUsers({ fids: [userFid] });
-        const userProfile = users[0];
-        
-        if (userProfile) {
-          console.log(`👤 Successfully fetched profile for ${userProfile.username}`);
-          
-          // Award a small bonus for active profile
-          const { data: existingDiscovery } = await supabase
-            .from('activities')
-            .select('id')
-            .eq('"userId"', user.id)
-            .eq('"activityType"', 'ARTIST_DISCOVERY')
-            .gte('"createdAt"', twentyFourHoursAgo.toISOString())
-            .single();
-
-          if (!existingDiscovery) {
-            try {
-              const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  userId: user.id,
-                  activityType: 'ARTIST_DISCOVERY',
-                  metadata: {
-                    syncedFromFarcaster: true,
-                    realFarcasterData: true,
-                    timestamp: now.toISOString(),
-                    note: 'Active Farcaster engagement bonus'
-                  }
-                })
-              });
-
-              if (activityResponse.ok) {
-                const activityResult = await activityResponse.json();
-                totalActivitiesDetected++;
-                
-                detectedActivities.push({
-                  type: 'ARTIST_DISCOVERY',
-                  points: activityResult.pointsAwarded,
-                  timestamp: now.toISOString()
-                });
-
-                console.log(`✅ Awarded ${activityResult.pointsAwarded} points for active engagement`);
-              }
-            } catch (error) {
-              console.error(`❌ Error recording discovery activity:`, error);
-            }
-          }
-        }
-      } catch (profileError) {
-        console.log('⚠️ Could not fetch user profile, skipping profile bonus');
-      }
-
     } catch (neynarError) {
       console.error('❌ Neynar API Error:', neynarError);
+      console.log('🔄 Falling back to participation reward...');
       
-      // If Neynar fails completely, still award a small participation reward
+      // If Neynar fails, still award a participation reward
       try {
-        const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            activityType: 'ARTIST_DISCOVERY',
-            metadata: {
-              syncedFromFarcaster: true,
-              fallbackReward: true,
-              timestamp: now.toISOString(),
-              note: 'Participation reward - Farcaster integration improving'
-            }
-          })
-        });
+        // Check if user already got a participation reward today
+        const { data: existingParticipation } = await supabase
+          .from('activities')
+          .select('id')
+          .eq('"userId"', user.id)
+          .eq('"activityType"', 'ARTIST_DISCOVERY')
+          .gte('"createdAt"', twentyFourHoursAgo.toISOString())
+          .single();
 
-        if (activityResponse.ok) {
-          const activityResult = await activityResponse.json();
-          totalActivitiesDetected = 1;
-          
-          detectedActivities.push({
-            type: 'ARTIST_DISCOVERY',
-            points: activityResult.pointsAwarded,
-            timestamp: now.toISOString()
+        if (!existingParticipation) {
+          const activityResponse = await fetch(`${request.nextUrl.origin}/api/activities`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              activityType: 'ARTIST_DISCOVERY',
+              metadata: {
+                syncedFromFarcaster: true,
+                participationReward: true,
+                timestamp: now.toISOString(),
+                note: 'Daily participation reward - keep supporting artists!'
+              }
+            })
           });
 
-          console.log(`✅ Awarded ${activityResult.pointsAwarded} points as participation reward`);
+          if (activityResponse.ok) {
+            const activityResult = await activityResponse.json();
+            totalActivitiesDetected = 1;
+            
+            detectedActivities.push({
+              type: 'ARTIST_DISCOVERY',
+              points: activityResult.pointsAwarded,
+              timestamp: now.toISOString()
+            });
+
+            console.log(`✅ Awarded ${activityResult.pointsAwarded} points as participation reward`);
+          }
         }
       } catch (fallbackError) {
-        console.error('❌ Even fallback failed:', fallbackError);
+        console.error('❌ Fallback also failed:', fallbackError);
       }
     }
 
@@ -336,9 +287,9 @@ export async function POST(request: NextRequest) {
       activitiesDetected: totalActivitiesDetected,
       activities: detectedActivities,
       message: totalActivitiesDetected > 0 
-        ? `Found ${totalActivitiesDetected} new activities! Points awarded.`
-        : 'No new activities found. Try supporting some artists on Farcaster and sync again later!',
-      note: totalActivitiesDetected > 0 ? 'Real Farcaster integration working! 🎉' : 'Keep using Farcaster and sync again later!'
+        ? `Great! Found ${totalActivitiesDetected} activities and awarded points!`
+        : 'No new activities found. Keep engaging with artists on Farcaster and sync again later!',
+      note: totalActivitiesDetected > 0 ? 'Real Farcaster integration working! 🎉' : 'Thanks for using Art Claps! Keep supporting artists! 🎨'
     });
 
   } catch (error) {

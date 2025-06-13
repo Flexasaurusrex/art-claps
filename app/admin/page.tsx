@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useProfile } from '@farcaster/auth-kit';
+import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 interface PendingArtist {
@@ -21,7 +21,7 @@ interface PendingArtist {
 }
 
 export default function AdminPage() {
-  const { isAuthenticated, profile } = useProfile();
+  const { isAuthenticated, profile, refreshAuth } = useAuth();
   const router = useRouter();
   const [pendingArtists, setPendingArtists] = useState<PendingArtist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,12 +31,18 @@ export default function AdminPage() {
   // Check if user is admin (FID 7418)
   const isAdmin = profile?.fid === 7418;
 
+  // Refresh auth on page load
+  useEffect(() => {
+    refreshAuth();
+  }, []);
+
   useEffect(() => {
     // Debug: Log auth state
     console.log('Admin page - Auth state:', { 
       isAuthenticated, 
       profile: profile?.fid, 
-      isAdmin: profile?.fid === 7418 
+      isAdmin: profile?.fid === 7418,
+      profileData: profile
     });
 
     // Skip auth checks for now - just load the page
@@ -124,27 +130,29 @@ export default function AdminPage() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
-          <a 
-            href="/discover"
-            className="text-white/80 hover:text-white no-underline text-sm lg:text-base transition-colors flex items-center gap-2"
+          <button 
+            onClick={() => router.push('/discover')}
+            className="text-white/80 hover:text-white bg-transparent border-none text-sm lg:text-base transition-colors flex items-center gap-2 cursor-pointer"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m15 18-6-6 6-6"/>
             </svg>
             Back to Discover
-          </a>
+          </button>
           
-          <div className="flex items-center gap-3">
-            <img 
-              src={profile?.pfpUrl} 
-              alt={profile?.displayName}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/30"
-            />
-            <div className="text-white">
-              <div className="font-semibold text-sm sm:text-base">{profile?.displayName}</div>
-              <div className="text-xs sm:text-sm opacity-80">Admin</div>
+          {profile && (
+            <div className="flex items-center gap-3">
+              <img 
+                src={profile.pfpUrl} 
+                alt={profile.displayName}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white/30"
+              />
+              <div className="text-white">
+                <div className="font-semibold text-sm sm:text-base">{profile.displayName}</div>
+                <div className="text-xs sm:text-sm opacity-80">Admin</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
@@ -251,7 +259,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => handleApprovalWithNotes(artist.id, true)}
                         disabled={processing[artist.id]}
-                        className={`flex-1 lg:flex-none px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-semibold transition-all ${
+                        className={`flex-1 lg:flex-none px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-semibold transition-all border-none ${
                           processing[artist.id]
                             ? 'bg-green-500/30 cursor-not-allowed'
                             : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 hover:scale-105 cursor-pointer'
@@ -263,7 +271,7 @@ export default function AdminPage() {
                       <button
                         onClick={() => handleApprovalWithNotes(artist.id, false)}
                         disabled={processing[artist.id]}
-                        className={`flex-1 lg:flex-none px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-semibold transition-all ${
+                        className={`flex-1 lg:flex-none px-3 lg:px-4 py-2 lg:py-3 rounded-xl text-white text-xs sm:text-sm lg:text-base font-semibold transition-all border-none ${
                           processing[artist.id]
                             ? 'bg-red-500/30 cursor-not-allowed'
                             : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:scale-105 cursor-pointer'

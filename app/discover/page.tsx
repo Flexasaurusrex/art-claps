@@ -372,7 +372,7 @@ export default function DiscoverPage() {
                   </svg>
                 </div>
 
-                {/* FIXED: Dropdown Menu with better background and contrast */}
+                {/* Dropdown Menu */}
                 {showProfileDropdown && (
                   <div
                     ref={dropdownRef}
@@ -530,13 +530,13 @@ export default function DiscoverPage() {
             </div>
           )}
 
-          {/* Artists Grid */}
+          {/* Artists Grid - FIXED: Equal height cards with aligned buttons */}
           {artists.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
               {artists.map((artist) => (
                 <div
                   key={artist.fid}
-                  className={`bg-white/10 backdrop-blur-xl rounded-2xl lg:rounded-3xl p-4 lg:p-6 transition-transform hover:-translate-y-1 relative ${
+                  className={`bg-white/10 backdrop-blur-xl rounded-2xl lg:rounded-3xl p-4 lg:p-6 transition-transform hover:-translate-y-1 relative flex flex-col h-full ${
                     artist.verifiedArtist 
                       ? 'border-2 border-green-500/50' 
                       : 'border border-white/20'
@@ -549,14 +549,13 @@ export default function DiscoverPage() {
                     </div>
                   )}
 
-                  {/* FIXED: Artist Header with padding to prevent name overlap */}
+                  {/* Artist Header */}
                   <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
                     <img
                       src={artist.pfpUrl}
                       alt={artist.displayName}
                       className="w-12 h-12 lg:w-16 lg:h-16 rounded-full border-2 lg:border-3 border-white/30"
                     />
-                    {/* FIXED: Added pr-20 to prevent overlap with verified badge */}
                     <div className="flex-1 min-w-0 pr-20">
                       <h3 className="text-white text-lg lg:text-xl font-bold mb-1 truncate">
                         {artist.displayName}
@@ -567,10 +566,12 @@ export default function DiscoverPage() {
                     </div>
                   </div>
 
-                  {/* Bio */}
-                  <p className="text-white/80 text-sm lg:text-base line-clamp-3 mb-4 lg:mb-6 leading-relaxed">
-                    {artist.bio}
-                  </p>
+                  {/* Bio - Fixed height container */}
+                  <div className="flex-1 mb-4 lg:mb-6">
+                    <p className="text-white/80 text-sm lg:text-base leading-relaxed h-16 lg:h-20 overflow-hidden">
+                      {artist.bio}
+                    </p>
+                  </div>
 
                   {/* Stats */}
                   <div className="flex justify-around mb-4 lg:mb-6">
@@ -592,8 +593,8 @@ export default function DiscoverPage() {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
+                  {/* Action Buttons - Always at bottom */}
+                  <div className="flex flex-col sm:flex-row gap-2 lg:gap-3 mt-auto">
                     <button
                       onClick={() => handleClap(artist.fid)}
                       disabled={loading[artist.fid] || artist.alreadyClappedToday}

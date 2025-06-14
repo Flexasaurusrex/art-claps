@@ -1,6 +1,7 @@
-// app/api/admin/pending-artists/route.ts
+// app/api/admin/pending-artists/route.ts - FIXED COLUMN NAMES
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+
 export const dynamic = 'force-dynamic';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -15,33 +16,33 @@ function extractRelationshipData<T>(data: T | T[] | null): T | null {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get pending artists with referrer info
+    // Get pending artists with referrer info - FIXED: using lowercase column names
     const { data: artists, error } = await supabase
       .from('users')
       .select(`
         id,
-        farcasterFid,
+        "farcasterFid",
         username,
-        displayName,
-        pfpUrl,
+        "displayName",
+        "pfpUrl",
         bio,
-        verificationNotes,
-        createdAt,
-        referredBy,
-        referrer:users!users_referredBy_fkey(
+        verificationnotes,
+        "createdAt",
+        referredby,
+        referrer:users!users_referredby_fkey(
           username,
-          displayName
+          "displayName"
         )
       `)
-      .eq('artistStatus', 'pending_artist')
-      .order('createdAt', { ascending: true });
+      .eq('artiststatus', 'pending_artist')  // FIXED: lowercase column name
+      .order('"createdAt"', { ascending: true });  // FIXED: quoted column name
 
     if (error) throw error;
 
     const formattedArtists = artists?.map(artist => {
       // Safely handle referrer relationship data (can be array or single object)
       const referrerData = extractRelationshipData(artist.referrer);
-
+      
       return {
         id: artist.id,
         farcasterFid: artist.farcasterFid,
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
         displayName: artist.displayName || artist.username,
         pfpUrl: artist.pfpUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artist.username}`,
         bio: artist.bio || '',
-        verificationNotes: artist.verificationNotes || '',
+        verificationNotes: artist.verificationnotes || '',  // FIXED: lowercase column name
         createdAt: artist.createdAt,
         referredBy: referrerData ? {
           username: referrerData.username,
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST endpoint for approving/rejecting artists
+// POST endpoint for approving/rejecting artists - FIXED COLUMN NAMES
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -94,16 +95,16 @@ export async function POST(request: NextRequest) {
 
     const newStatus = action === 'approve' ? 'verified_artist' : 'supporter';
 
-    // Update artist status
+    // Update artist status - FIXED: using lowercase column names
     const { data: updatedArtist, error: updateError } = await supabase
       .from('users')
       .update({
-        artistStatus: newStatus,
-        verificationNotes: adminNotes || null,
-        updatedAt: new Date().toISOString()
+        artiststatus: newStatus,  // FIXED: lowercase column name
+        verificationnotes: adminNotes || null,  // FIXED: lowercase column name  
+        "updatedAt": new Date().toISOString()  // FIXED: quoted column name
       })
       .eq('id', artistId)
-      .eq('artistStatus', 'pending_artist') // Only update if still pending
+      .eq('artiststatus', 'pending_artist')  // FIXED: lowercase column name
       .select()
       .single();
 

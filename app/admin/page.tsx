@@ -1,4 +1,4 @@
-// app/admin/page.tsx - Mobile-Optimized Admin Panel
+// app/admin/page.tsx - FIXED with full URL
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -52,11 +52,17 @@ export default function AdminPage() {
 
   const fetchPendingArtists = async () => {
     try {
-      const response = await fetch('/api/admin/pending-artists');
+      // FIXED: Using full URL instead of relative URL
+      const response = await fetch('https://art-claps.vercel.app/api/admin/pending-artists');
       const data = await response.json();
+      
+      console.log('API Response:', data); // Debug log
       
       if (data.success) {
         setPendingArtists(data.artists);
+        console.log('Set pending artists:', data.artists.length); // Debug log
+      } else {
+        console.error('API returned error:', data.error);
       }
     } catch (error) {
       console.error('Error fetching pending artists:', error);
@@ -81,7 +87,8 @@ export default function AdminPage() {
     setProcessing(prev => ({ ...prev, [artistId]: true }));
 
     try {
-      const response = await fetch('/api/admin/pending-artists', {
+      // FIXED: Using full URL for POST request too
+      const response = await fetch('https://art-claps.vercel.app/api/admin/pending-artists', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

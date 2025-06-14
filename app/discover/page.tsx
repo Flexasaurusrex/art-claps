@@ -372,18 +372,18 @@ export default function DiscoverPage() {
                   </svg>
                 </div>
 
-                {/* Dropdown Menu */}
+                {/* FIXED: Dropdown Menu with better background and contrast */}
                 {showProfileDropdown && (
                   <div
                     ref={dropdownRef}
-                    className="absolute top-full right-0 mt-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
+                    className="absolute top-full right-0 mt-2 bg-gray-900/95 backdrop-blur-xl border border-white/30 rounded-2xl p-4 min-w-[200px] z-50 shadow-2xl"
                   >
                     {/* User Info Header */}
-                    <div className="border-b border-white/20 pb-4 mb-4">
+                    <div className="border-b border-white/30 pb-4 mb-4">
                       <div className="text-white font-semibold mb-1">
                         {profile?.displayName}
                       </div>
-                      <div className="text-white/70 text-sm mb-2">
+                      <div className="text-white/80 text-sm mb-2">
                         @{profile?.username}
                       </div>
                       <div className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold border ${
@@ -406,7 +406,7 @@ export default function DiscoverPage() {
                       {userRole === 'admin' && (
                         <button
                           onClick={() => router.push('/admin')}
-                          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                          className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/20"
                         >
                           <span>👑</span>
                           <span>Admin Panel</span>
@@ -416,18 +416,18 @@ export default function DiscoverPage() {
                       {/* Referral Codes */}
                       <button
                         onClick={() => router.push('/referral-codes')}
-                        className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                        className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/20"
                       >
                         <span>🎟️</span>
                         <span>Referral Codes</span>
                       </button>
 
-                      <div className="h-px bg-white/20 my-2" />
+                      <div className="h-px bg-white/30 my-2" />
 
                       {/* Home */}
                       <button
                         onClick={() => router.push('/')}
-                        className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                        className="flex items-center gap-3 text-white bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/20"
                       >
                         <span>🏠</span>
                         <span>Home</span>
@@ -438,7 +438,7 @@ export default function DiscoverPage() {
                         onClick={() => {
                           window.location.href = '/';
                         }}
-                        className="flex items-center gap-3 text-white/80 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/10"
+                        className="flex items-center gap-3 text-white/90 bg-transparent border-none p-3 rounded-xl transition-colors w-full text-left hover:bg-white/20"
                       >
                         <span>🚪</span>
                         <span>Sign Out</span>
@@ -549,14 +549,15 @@ export default function DiscoverPage() {
                     </div>
                   )}
 
-                  {/* Artist Header */}
+                  {/* FIXED: Artist Header with padding to prevent name overlap */}
                   <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
                     <img
                       src={artist.pfpUrl}
                       alt={artist.displayName}
                       className="w-12 h-12 lg:w-16 lg:h-16 rounded-full border-2 lg:border-3 border-white/30"
                     />
-                    <div className="flex-1 min-w-0">
+                    {/* FIXED: Added pr-20 to prevent overlap with verified badge */}
+                    <div className="flex-1 min-w-0 pr-20">
                       <h3 className="text-white text-lg lg:text-xl font-bold mb-1 truncate">
                         {artist.displayName}
                       </h3>

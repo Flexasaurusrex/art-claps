@@ -100,8 +100,8 @@ export default function ArtistProfilePage() {
       
       if (data.success) {
         setArtist(data.artist);
-        // Check if user already clapped today (if the API returns this info)
-        setAlreadyClappedToday(data.artist.alreadyClappedToday || false);
+        // FIXED: Check if user already clapped today (corrected property path)
+        setAlreadyClappedToday(data.alreadyClappedToday || false);
       } else {
         router.push('/discover');
       }

@@ -95,7 +95,8 @@ export default function ArtistProfilePage() {
   const fetchArtistProfile = async () => {
     try {
       const currentUserFid = profile?.fid || '';
-      const response = await fetch(`/api/artists?username=${username}&currentUserFid=${currentUserFid}`);
+      // FIXED: Changed from /api/artists to /api/artist
+      const response = await fetch(`/api/artist?username=${username}&currentUserFid=${currentUserFid}`);
       const data = await response.json();
       
       if (data.success) {

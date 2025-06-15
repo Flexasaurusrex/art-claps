@@ -13,8 +13,13 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get('username');
     const currentUserFid = searchParams.get('currentUserFid');
     
-    // IF USERNAME PROVIDED: Return single artist (for profile pages)
-    if (username) {
+    // DEBUG: Log what we're getting
+    console.log('API Debug - username:', username, 'currentUserFid:', currentUserFid);
+    
+    // SINGLE ARTIST MODE: If username parameter exists and is not empty
+    if (username && username.trim() !== '') {
+      console.log('Single artist mode for username:', username);
+      
       // Fetch specific artist profile
       const { data: artist, error: artistError } = await supabase
         .from('users')
@@ -32,13 +37,16 @@ export async function GET(request: NextRequest) {
           artistLinks,
           extendedBio
         `)
-        .eq('username', username)
+        .eq('username', username.trim())
         .eq('artistStatus', 'verified_artist')
         .single();
 
+      console.log('Artist query result:', { artist, artistError });
+
       if (artistError || !artist) {
+        console.log('Artist not found for username:', username);
         return NextResponse.json(
-          { error: 'Artist not found' },
+          { error: 'Artist not found', debug: { username, artistError } },
           { status: 404 }
         );
       }
@@ -70,7 +78,7 @@ export async function GET(request: NextRequest) {
 
       // Check if current user already clapped today (if authenticated)
       let alreadyClappedToday = false;
-      if (currentUserFid) {
+      if (currentUserFid && currentUserFid.trim() !== '') {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -113,15 +121,19 @@ export async function GET(request: NextRequest) {
         follower_count: connections
       };
 
-      // RETURN SINGLE ARTIST FORMAT (matching what frontend expects)
+      console.log('Returning single artist profile for:', username);
+
+      // RETURN SINGLE ARTIST FORMAT
       return NextResponse.json({
         success: true,
         artist: artistProfile,        // Single artist object
-        alreadyClappedToday
+        alreadyClappedToday,
+        debug: { mode: 'single', username }
       });
     }
     
-    // ELSE: Return multiple artists (for discover page)
+    // MULTIPLE ARTISTS MODE: No username parameter
+    console.log('Multiple artists mode - no username parameter');
     
     // Fetch all verified artists
     const { data: users, error } = await supabase
@@ -178,7 +190,7 @@ export async function GET(request: NextRequest) {
 
     // Check if current user already clapped today for each artist
     let userClapsToday = [];
-    if (currentUserFid) {
+    if (currentUserFid && currentUserFid.trim() !== '') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -226,15 +238,18 @@ export async function GET(request: NextRequest) {
     // Sort by claps (descending)
     artistsWithStats.sort((a, b) => b.claps - a.claps);
 
+    console.log('Returning multiple artists, count:', artistsWithStats.length);
+
     return NextResponse.json({
       success: true,
-      artists: artistsWithStats        // Array of artists
+      artists: artistsWithStats,        // Array of artists
+      debug: { mode: 'multiple', count: artistsWithStats.length }
     });
 
   } catch (error) {
-    console.error('Error fetching artists:', error);
+    console.error('Error in artists API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch artists' },
+      { error: 'Failed to fetch artists', debug: error.message },
       { status: 500 }
     );
   }

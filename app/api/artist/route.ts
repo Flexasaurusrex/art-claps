@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in artists API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch artists', debug: error.message },
+      { error: 'Failed to fetch artists', debug: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
